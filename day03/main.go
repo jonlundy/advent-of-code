@@ -20,14 +20,20 @@ type partNumber struct {
 }
 
 type symbol struct {
-	row int
-	col int
+	symbol        rune
+	row           int
+	col           int
+	adjacentParts []*partNumber
 }
-type symbolTab map[int]map[int]symbol
+type symbolTab map[int]map[int]*symbol
 
-func hasSymbol(tab symbolTab, row, col int) bool {
+func hasSymbol(tab symbolTab, row, col int, p partNumber) bool {
 	if cols, ok := tab[row]; ok {
-		_, ok = cols[col]
+		s, ok := cols[col]
+		if ok {
+			s.adjacentParts = append(s.adjacentParts, &p)
+			cols[col] = s
+		}
 		return ok
 	}
 	return false
@@ -38,7 +44,7 @@ func scanSymbol(tab symbolTab, p partNumber) bool {
 
 	for i := rowStart; i <= rowEnd; i++ {
 		for j := colStart; j <= colEnd; j++ {
-			ok := hasSymbol(tab, i, j)
+			ok := hasSymbol(tab, i, j, p)
 			// fmt.Println(p.number, i, j, ok)
 			if ok {
 				return true
@@ -54,7 +60,8 @@ func main() {
 
 	m := [][]rune{}
 	parts := []partNumber{}
-	symbols := make(map[int]map[int]symbol)
+	symbols := make(symbolTab)
+	symbolList := []*symbol{}
 
 	for scan.Scan() {
 		text := scan.Text()
@@ -77,10 +84,12 @@ func main() {
 			if a != '.' {
 				cols, ok := symbols[row]
 				if !ok {
-					cols = make(map[int]symbol)
+					cols = make(map[int]*symbol)
 				}
-				cols[col] = symbol{row: row, col: col}
+				s := &symbol{row: row, col: col, symbol: a}
+				cols[col] = s
 				symbols[row] = cols
+				symbolList = append(symbolList, s)
 			}
 		}
 		if v, err := strconv.Atoi(string(slice)); err == nil {
@@ -91,15 +100,24 @@ func main() {
 
 	sum := 0
 	for i, p := range parts {
-		ok :=scanSymbol(symbols, p)
+		ok := scanSymbol(symbols, p)
 		parts[i].hasSymbol = ok
 		if ok {
 			sum += p.number
 		}
 	}
 
+	sumGears := 0
+	for _, s := range symbolList {
+		if s.symbol == '*' && len(s.adjacentParts) == 2 {
+			sumGears += s.adjacentParts[0].number * s.adjacentParts[1].number
+		}
+	}
+
 	fmt.Println(m)
 	fmt.Println(parts)
 	fmt.Println(symbols)
+	fmt.Println(symbolList)
 	fmt.Println(sum)
+	fmt.Println(sumGears)
 }
