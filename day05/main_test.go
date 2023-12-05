@@ -22,7 +22,7 @@ func TestExample(t *testing.T) {
 
 	minLocation, minRangeLocation := run(scan)
 	is.Equal(minLocation, 35)
-	is.Equal(minRangeLocation, 47)
+	is.Equal(minRangeLocation, 46)
 }
 
 func SkipTestSolution(t *testing.T) {

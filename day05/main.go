@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log/slog"
 	"os"
 	"sort"
 	"strconv"
@@ -11,11 +10,6 @@ import (
 )
 
 func main() {
-	var level slog.Level
-	if err := level.UnmarshalText([]byte(os.Getenv("DEBUG_LEVEL"))); err == nil && level != 0 {
-		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
-	}
-
 	if len(os.Args) != 2 {
 		fmt.Fprintln(os.Stderr, "Usage: day05 FILE")
 	}
@@ -31,21 +25,24 @@ func main() {
 
 	fmt.Println("min location:", minLocation)
 	fmt.Println("min range location:", minRangeLocation)
-
 }
 
 func run(scan *bufio.Scanner) (int, int) {
+	log("begin...")
+
 	var seeds []int
-	var seedRanges []int
+	var seedRanges [][2]int
 	lookup := map[string]*Lookup{}
 
 	for scan.Scan() {
 		text := scan.Text()
 		if strings.HasPrefix(text, "seeds:") && len(seeds) == 0 {
 			seeds, seedRanges = readSeeds(text)
+			log("seeds", len(seeds), "ranges", len(seedRanges))
 		}
 
 		lookup = readMaps(scan)
+		log("lookups", len(lookup))
 	}
 
 	find := NewFinder(
@@ -58,38 +55,21 @@ func run(scan *bufio.Scanner) (int, int) {
 		lookup["humidity-to-location"],
 	)
 
-	seedLocations := make([]int, len(seeds))
-	for i, s := range seeds {
-		seedLocations[i] = find.Find(s)
-	}
-	minLocation := min(seedLocations...)
-
-	seedRangeLocations := make([]int, len(seedRanges))
-	for i, s := range seedRanges {
-		seedRangeLocations[i] = find.Find(s)
-	}
-	minRangeLocation := min(seedRangeLocations...)
-
-	return minLocation, minRangeLocation
+	return findMinLocation(seeds, find), FindMinRangeLocationMulti(seedRanges, find)
 }
 
-
-func readSeeds(text string) ([]int, []int) {
-	var seeds, seedRanges []int
+func readSeeds(text string) ([]int, [][2]int) {
+	var seeds [] int 
+	var seedRanges [][2]int
 	sp := strings.Fields(strings.TrimPrefix(text, "seeds: "))
 	for i, s := range sp {
 		n, _ := strconv.Atoi(s)
 		seeds = append(seeds, n)
 
 		if i%2 == 0 {
-			seedRanges = append(seedRanges, n)
+			seedRanges = append(seedRanges, [2]int{n, 0})
 		} else {
-			lastN := seedRanges[len(seedRanges)-1]
-			r := make([]int, n-1)
-			for i := range r {
-				r[i] = lastN + i + 1
-			}
-			seedRanges = append(seedRanges, r...)
+			seedRanges[len(seedRanges)-1][1] = n
 		}
 	}
 	return seeds, seedRanges
@@ -121,6 +101,74 @@ func readMaps(scan *bufio.Scanner) map[string]*Lookup {
 		}
 	}
 	return lookup
+}
+
+func findMinLocation(seeds []int, find *Finder) int {
+	seedLocations := make([]int, len(seeds))
+	for i, s := range seeds {
+		seedLocations[i] = find.Find(s)
+	}
+	return min(seedLocations...)
+}
+
+func FindMinRangeLocation(ranges [][2]int, find *Finder) int {
+	results := 0
+	for _, r := range ranges {
+		results += r[1]
+	}
+
+	seedLocations := make([]int, 0, results)
+
+	for _, s := range ranges {
+		for i := 0; i < s[1]; i++ {
+			seedLocations = append(seedLocations, find.Find(s[0] + i))
+		}
+	}
+	return min(seedLocations...)
+}
+
+func FindMinRangeLocationMulti(ranges [][2]int, find *Finder) int {
+	worker := func(id int, jobs <-chan [2]int, results chan<- []int) {
+		for s := range jobs {
+			res := make([]int, s[1])
+			for i := 0; i < s[1]; i++ {
+				res[i] = find.Find(s[0] + i)
+			}
+			results <- res
+		}
+	}
+
+	numWorkers := 16
+	jobsCh := make(chan [2]int, numWorkers)
+	resultsCh := make(chan []int, len(ranges))
+
+	for w := 0; w < numWorkers; w++ {
+		go worker(w, jobsCh, resultsCh)
+	}
+	log("started workers", numWorkers)
+
+	go func() {
+		for i, s := range ranges {
+			log("job", i, "send", s)
+			jobsCh <- s
+		}
+		close(jobsCh)
+	}()
+
+	results := 0
+	for _, r := range ranges {
+		results += r[1]
+	}
+	log("expecting results", results)
+
+	seedLocations := make([]int, 0, results)
+	expectResults := make([]struct{}, len(ranges))
+	for range expectResults {
+		r := <- resultsCh
+		seedLocations = append(seedLocations, r...)
+	}
+
+	return min(seedLocations...)
 }
 
 type Range struct {
@@ -179,6 +227,9 @@ func (f *Finder) Find(n int) int {
 }
 
 func min(arr ...int) int {
+	if len(arr) == 0 {
+		return 0
+	}
 	m := arr[0]
 	for _, a := range arr[1:] {
 		if m > a {
@@ -186,4 +237,8 @@ func min(arr ...int) int {
 		}
 	}
 	return m
+}
+
+func log(v ...any) {
+	fmt.Fprintln(os.Stderr, v...)
 }
