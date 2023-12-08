@@ -26,7 +26,7 @@ func main() {
 }
 
 func run(scan *bufio.Scanner) (uint64, uint64) {
-	var game Game
+	var game1, game2 Game
 
 	for scan.Scan() {
 		var cards string
@@ -37,15 +37,18 @@ func run(scan *bufio.Scanner) (uint64, uint64) {
 		}
 
 		fmt.Println("cards", cards, "bid", bid)
-		game.plays = append(game.plays, Play{bid, []rune(cards), &game})
+		game1.Append(cards, bid)
+		game2.Append(cards, bid)
 	}
 
-	game.cardOrder = getOrder(cardTypes1)
-	product1 := calcProduct(game)
+	game1.cardTypes = cardTypes1
+	game1.cardOrder = getOrder(cardTypes1)
+	product1 := calcProduct(game1)
 
-	game.cardOrder = getOrder(cardTypes2)
-	game.wildCard = 'J'
-	product2 := calcProduct(game)
+	game2.cardTypes = cardTypes2
+	game2.cardOrder = getOrder(cardTypes2)
+	game2.wildCard = 'J'
+	product2 := calcProduct(game2)
 
 	return product1, product2
 }
@@ -53,7 +56,7 @@ func run(scan *bufio.Scanner) (uint64, uint64) {
 var cardTypes1 = []rune{'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'}
 var cardTypes2 = []rune{'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J'}
 
-func calcProduct(game Game) uint64 {
+func calcProduct(game Game) uint64 {	
 	sort.Sort(game.plays)
 
 	var product uint64
@@ -76,92 +79,108 @@ func getOrder(cardTypes []rune) map[rune]int {
 type Game struct {
 	plays     Plays
 	cardOrder map[rune]int
+
+	cardTypes []rune
 	wildCard  rune
+}
+
+func (g *Game) Append(cards string, bid int) {
+	p := Play{bid: bid, hand: []rune(cards), game: g}
+	g.plays = append(g.plays, p)
 }
 
 type Play struct {
 	bid  int
 	hand Hand
+	cardCounts map[rune]int
+    strength int
+
 	game *Game
 }
 
 type Hand []rune
 
-func (h Play) HandType() string {
-	hc, _ := h.HighCard()
-	switch {
-	case h.IsFiveOfKind():
+func (h *Play) HandType() string {
+	hs := h.HandStrength()
+	kind := hs& 0xf00000
+	hc := h.game.cardTypes[13-hs&0xf0000>>16]
+	switch kind {
+	case 0x700000:
 		return "5K-" + string(hc)
-	case h.IsFourOfKind():
+	case 0x600000:
 		return "4K-" + string(hc)
-	case h.IsFullHouse():
+	case 0x500000:
 		return "FH-" + string(hc)
-	case h.IsThreeOfKind():
+	case 0x400000:
 		return "3K-" + string(hc)
-	case h.IsTwoPair():
+	case 0x300000:
 		return "2P-" + string(hc)
-	case h.IsOnePair():
+	case 0x200000:
 		return "1P-" + string(hc)
-	case h.IsHighCard():
+	case 0x100000:
 		return "HC-" + string(hc)
 	}
 	return "Uno"
 }
 
-func (h Play) HandStrength() int {
-	_, v := h.HighCard()
+func (p *Play) HandStrength() int {
+	_, v := p.HighCard()
+
 	switch {
-	case h.IsFiveOfKind():
-		return 0x700000 | v
-	case h.IsFourOfKind():
-		return 0x600000 | v
-	case h.IsFullHouse():
-		return 0x500000 | v
-	case h.IsThreeOfKind():
-		return 0x400000 | v
-	case h.IsTwoPair():
-		return 0x300000 | v
-	case h.IsOnePair():
-		return 0x200000 | v
-	case h.IsHighCard():
-		return 0x100000 | v
+	case p.IsFiveOfKind():
+		p.strength = 0x700000 | v
+	case p.IsFourOfKind():
+		p.strength = 0x600000 | v
+	case p.IsFullHouse():
+		p.strength = 0x500000 | v
+	case p.IsThreeOfKind():
+		p.strength = 0x400000 | v
+	case p.IsTwoPair():
+		p.strength = 0x300000 | v
+	case p.IsOnePair():
+		p.strength = 0x200000 | v
+	case p.IsHighCard():
+		p.strength = 0x100000 | v
 	}
-	return 0
+	return p.strength
 }
 
 func (h Play) IsFiveOfKind() bool {
-	_, _, _, _, has5 := h.game.hasSame(h.hand)
+	_, _, _, _, has5 := h.game.hasSame(h.cardCounts)
 	return has5
 }
 func (h Play) IsFourOfKind() bool {
-	_, _, _, has4, _ := h.game.hasSame(h.hand)
+	_, _, _, has4, _ := h.game.hasSame(h.cardCounts)
 	return has4
 }
 func (h Play) IsFullHouse() bool {
-	_, has2, has3, _, _ := h.game.hasSame(h.hand)
+	_, has2, has3, _, _ := h.game.hasSame(h.cardCounts)
 	return has3 && has2
 }
 func (h Play) IsThreeOfKind() bool {
-	has1, _, has3, _, _ := h.game.hasSame(h.hand)
+	has1, _, has3, _, _ := h.game.hasSame(h.cardCounts)
 	return has3 && has1
 }
 func (h Play) IsTwoPair() bool {
-	_, has2, has3, _, _ := h.game.hasSame(h.hand)
-	return !has3 && has2 && h.game.pairs(h.hand) == 2
+	_, has2, has3, _, _ := h.game.hasSame(h.cardCounts)
+	return !has3 && has2 && h.game.pairs(h.cardCounts) == 2
 }
 func (h Play) IsOnePair() bool {
-	_, has2, has3, _, _ := h.game.hasSame(h.hand)
-	return !has3 && has2 && h.game.pairs(h.hand) == 1
+	_, has2, has3, _, _ := h.game.hasSame(h.cardCounts)
+	return !has3 && has2 && h.game.pairs(h.cardCounts) == 1
 }
 func (h Play) IsHighCard() bool {
-	has1, has2, has3, has4, _ := h.game.hasSame(h.hand)
+	has1, has2, has3, has4, _ := h.game.hasSame(h.cardCounts)
 	return has1 && !has2 && !has3 && !has4
 }
-func (h Play) HighCard() (rune, int) {
+func (h *Play) HighCard() (rune, int) {
+	if h.cardCounts == nil {
+		h.generateCounts()
+	}
+	
 	var i int
 	pairs := make(Pairs, 5)
-	cnt := h.game.Counts(h.hand)
-	for r, c := range cnt {
+	for r, c := range h.cardCounts {
 		pairs[i].c = c
 		pairs[i].r = r
 		pairs[i].o = h.game.cardOrder[r]
@@ -204,29 +223,32 @@ func (p Plays) Len() int           { return len(p) }
 func (p Plays) Less(i, j int) bool { return p[i].HandStrength() < p[j].HandStrength() }
 func (p Plays) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (g *Game) Counts(cards []rune) map[rune]int {
-	m := make(map[rune]int, len(g.cardOrder))
-	for _, c := range cards {
-		m[c]++
+func (p *Play) generateCounts() {
+	cardOrder := p.game.cardOrder
+	wildCard := p.game.wildCard
+
+	p.cardCounts = make(map[rune]int, len(cardOrder))
+	for _, c := range p.hand {
+		p.cardCounts[c]++
 	}
-	if g.wildCard != 0 && m[g.wildCard] > 0 {
+
+	if wildCard != 0 && p.cardCounts[wildCard] > 0 {
 		var maxK rune
 		var maxV int
-		for k, v := range m {
-			if k != g.wildCard && v > maxV {
+		for k, v := range p.cardCounts {
+			if k != wildCard && v > maxV {
 				maxK, maxV = k, v
 			}
 		}
+
 		if maxK != 0 {
-			m[maxK] += m[g.wildCard]
-			delete(m, g.wildCard)
+			p.cardCounts[maxK] += p.cardCounts[wildCard]
+			delete(p.cardCounts, wildCard)
 		}
 	}
-	return m
 }
-func (g *Game) hasSame(cards []rune) (has1, has2, has3, has4, has5 bool) {
-	cnt := g.Counts(cards)
-	for _, c := range cnt {
+func (g *Game) hasSame(counts map[rune]int) (has1, has2, has3, has4, has5 bool) {
+	for _, c := range counts {
 		switch c {
 		case 1:
 			has1 = true
@@ -246,9 +268,9 @@ func (g *Game) hasSame(cards []rune) (has1, has2, has3, has4, has5 bool) {
 	}
 	return
 }
-func (g *Game) pairs(cards []rune) int {
+func (g *Game) pairs(counts map[rune]int) int {
 	pairs := 0
-	for _, n := range g.Counts(cards) {
+	for _, n := range counts {
 		if n == 2 {
 			pairs++
 		}

@@ -26,18 +26,21 @@ func TestHands(t *testing.T) {
 	var game Game
 	game.cardOrder = getOrder(cardTypes1)
 
-	h := Play{0, []rune("AAA23"), &game}
+	h := Play{hand: []rune("AAA23"), game: &game}
+	// h.generateCounts()
 	is.Equal(h.HandType(), "3K-A")
 
-	h = Play{0, []rune("JJJJJ"), &game}
+	h = Play{hand: []rune("JJJJJ"), game:&game}
+	h.generateCounts()
+
 	is.Equal(h.HandType(), "5K-J")
 	is.Equal(fmt.Sprintf("%x", h.HandStrength()), "7aaaaa")
 
-	h = Play{0, []rune("KKKKJ"), &game}
+	h = Play{hand: []rune("KKKKJ"), game: &game}
 	is.Equal(h.HandType(), "4K-K")
 	is.Equal(fmt.Sprintf("%x", h.HandStrength()), "6cccca")
 
-	h = Play{0, []rune("QQQJA"), &game}
+	h = Play{hand: []rune("QQQJA"), game: &game}
 	is.Equal(h.HandType(), "3K-Q")
 	is.Equal(fmt.Sprintf("%x", h.HandStrength()), "4bbbad")
 }
