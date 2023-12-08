@@ -5,21 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	aoc "go.sour.is/advent-of-code-2023"
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: day08 FILE")
-	}
-
-	input, err := os.Open(os.Args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-
-	scan := bufio.NewScanner(input)
-
-	result, err := run(scan)
+	result, err := aoc.Runner(run)
 	if err != nil {
 		fmt.Println("ERR", err)
 		os.Exit(1)
@@ -29,8 +20,12 @@ func main() {
 }
 
 type result struct {
-	stepsPT1 int
+	stepsPT1 uint64
 	stepsPT2 uint64
+}
+
+func (r result) String() string {
+	return fmt.Sprintf("solution 1: %v\nsolution 2: %v\n", r.stepsPT1, r.stepsPT2)
 }
 
 func run(scan *bufio.Scanner) (*result, error) {
@@ -64,8 +59,8 @@ func run(scan *bufio.Scanner) (*result, error) {
 		return nil, err
 	}
 
-	steps1 := SolutionPT1(m, path)
-	steps2 := SolutionPT2(m, path)
+	steps1 := m.SolvePT1(path)
+	steps2 := m.SolvePT2(path)
 
 	return &result{steps1, steps2}, nil
 }
@@ -96,26 +91,25 @@ func (m nodeMap) mapNodes() error {
 	return nil
 }
 
-func SolutionPT1(m nodeMap, path []rune) int {
-	fmt.Println("---- PART 1 BEGIN ----")
-	position, ok := m["AAA"]
+func (m nodeMap) solver(start string, isEnd func(string) bool, path []rune) uint64 {
+	position, ok := m[start]
 	if !ok {
 		return 0
 	}
 	var i int
-	var steps int
+	var steps uint64
 
-	for steps < 100000 {
+	for steps < ^uint64(0) {
 		steps++
 		if path[i] == 'R' {
-			fmt.Println("step", steps, position.value, "R->", position.rvalue)
+			// fmt.Println("step", steps, position.value, "R->", position.rvalue)
 			position = position.right
 		} else {
-			fmt.Println("step", steps, position.value, "L->", position.lvalue)
+			// fmt.Println("step", steps, position.value, "L->", position.lvalue)
 			position = position.left
 		}
 
-		if position.value == "ZZZ" {
+		if isEnd(position.value) {
 			break
 		}
 
@@ -124,126 +118,33 @@ func SolutionPT1(m nodeMap, path []rune) int {
 			i = 0
 		}
 	}
-	fmt.Println("---- PART 1 END ----")
 	return steps
 }
 
-func SolutionPT2(m nodeMap, path []rune) uint64 {
+func (m nodeMap) SolvePT1(path []rune) uint64 {
+	fmt.Println("---- PART 1 BEGIN ----")
+	defer fmt.Println("---- PART 1 END ----")
+
+	return m.solver("AAA", func(s string) bool { return s == "ZZZ" }, path)
+}
+
+func (m nodeMap) SolvePT2(path []rune) uint64 {
 	fmt.Println("---- PART 2 BEGIN ----")
+	defer fmt.Println("---- PART 2 END ----")
 
-	type loop struct {
-		start, position, end *node
-		steps                uint64
-	}
-	loops := make(map[*node]loop)
+	var starts []*node
 
-	endpoints := make(map[*node]struct{})
 	for k, n := range m {
 		if strings.HasSuffix(k, "A") {
 			fmt.Println("start", k)
-			loops[n] = loop{start: n, position: n}
-		}
-
-		if strings.HasSuffix(k, "Z") {
-			fmt.Println("stop", k)
-			endpoints[n] = struct{}{}
+			starts = append(starts, n)
 		}
 	}
 
-	var i int
-	var steps uint64
-	var stops int
-	maxUint := ^uint64(0)
-	loopsFound := 0
-
-	for steps < maxUint {
-		steps++
-		if path[i] == 'R' {
-			for k, loop := range loops {
-				// fmt.Println("step", steps, position.value, "R->", position.rvalue)
-				loop.position = loop.position.right
-				loops[k] = loop
-			}
-		} else {
-			for k, loop := range loops {
-				// fmt.Println("step", steps, position.value, "L->", position.lvalue)
-				loop.position = loop.position.left
-				loops[k] = loop
-			}
-		}
-
-		done := true
-		s := 0
-		for k, loop := range loops {
-			if _, ok := endpoints[loop.position]; !ok {
-				// fmt.Println("no stop", i, position.value)
-				done = false
-				// break
-			} else {
-				// fmt.Println("stop", i, position.value)
-				if loop.end == nil {
-					loop.end = loop.position
-					loop.steps = steps
-					fmt.Println("loop found", loop.position.value, "steps", steps)
-					loops[k] = loop
-					loopsFound++
-				}
-				s++
-			}
-		}
-
-		if loopsFound == len(loops) {
-			var values []uint64
-			for _, loop := range loops {
-				values = append(values, loop.steps)
-			}
-			return LCM(values...)
-		}
-
-		if s > stops {
-			stops = s
-			fmt.Println("stops", stops, "steps", steps)
-		}
-
-		if done {
-			break
-		}
-
-		i++
-		if i > len(path)-1 {
-			i = 0
-		}
+	loops := make([]uint64, len(starts))
+	for i, n := range starts {
+		loops[i] = m.solver(n.value, func(s string) bool { return strings.HasSuffix(s, "Z") }, path)
 	}
-
-	fmt.Println("---- PART 2 END ----")
-	return steps
+	return aoc.LCM(loops...)
 }
 
-// greatest common divisor (GCD) via Euclidean algorithm
-func GCD(a, b uint64) uint64 {
-	for b != 0 {
-		t := b
-		b = a % b
-		a = t
-	}
-	return a
-}
-
-// find Least Common Multiple (LCM) via GCD
-func LCM(integers ...uint64) uint64 {
-	if len(integers) == 0 {
-		return 0
-	}
-	if len(integers) == 1 {
-		return integers[0]
-	}
-
-	a, b := integers[0], integers[1]
-	result := a * b / GCD(a, b)
-
-	for _, c := range integers[2:] {
-		result = LCM(result, c)
-	}
-
-	return result
-}

@@ -30,7 +30,7 @@ func TestExample1(t *testing.T) {
 	is.NoErr(err)
 
 	t.Log(result.stepsPT1)
-	is.Equal(result.stepsPT1, 2)
+	is.Equal(result.stepsPT1, uint64(2))
 }
 
 func TestExample2(t *testing.T) {
@@ -41,7 +41,7 @@ func TestExample2(t *testing.T) {
 	is.NoErr(err)
 
 	t.Log(result.stepsPT1)
-	is.Equal(result.stepsPT1, 6)
+	is.Equal(result.stepsPT1, uint64(6))
 }
 
 func TestExample3(t *testing.T) {
@@ -63,10 +63,18 @@ func TestInput(t *testing.T) {
 	is.NoErr(err)
 
 	t.Log("part1 solution", result.stepsPT1)
-	is.Equal(result.stepsPT1, 14429)
+	is.Equal(result.stepsPT1, uint64(14429))
+
 	t.Log("part2 solution", result.stepsPT2)
 	is.Equal(result.stepsPT2, uint64(10921547990923))
 }
 
 // first: 14429
 // second: 10921547990923
+
+// Brüt
+// stops 1 steps 13201
+// stops 2 steps 620447
+// stops 3 steps 36606373
+// stops 4 steps 2232988753
+// stops 5 steps 149610246451
