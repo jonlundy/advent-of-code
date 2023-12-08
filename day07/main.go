@@ -44,6 +44,7 @@ func run(scan *bufio.Scanner) (uint64, uint64) {
 	product1 := calcProduct(game)
 
 	game.cardOrder = getOrder(2)
+	game.wildCard = 'J'
 	product2 := calcProduct(game)
 
 	return product1, product2

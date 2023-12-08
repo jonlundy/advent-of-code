@@ -40,7 +40,6 @@ func TestHands(t *testing.T) {
 	h = Play{0, []rune("QQQJA"), &game}
 	is.Equal(h.HandType(), "3K-Q")
 	is.Equal(fmt.Sprintf("%x", h.HandStrength()), "4bbbad")
-
 }
 
 func TestPower(t *testing.T) {
@@ -69,5 +68,5 @@ func TestSolution(t *testing.T) {
 	is.Equal(score1, uint64(248559379))
 
 	t.Log("score2", score2)
-	is.Equal(score2, uint64(248761814))
+	is.Equal(score2, uint64(249631254))
 }
