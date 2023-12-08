@@ -24,7 +24,7 @@ func TestHands(t *testing.T) {
 	is := is.New(t)
 
 	var game Game
-	game.cardOrder = getOrder(1)
+	game.cardOrder = getOrder(cardTypes1)
 
 	h := Play{0, []rune("AAA23"), &game}
 	is.Equal(h.HandType(), "3K-A")

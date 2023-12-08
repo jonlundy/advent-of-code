@@ -9,7 +9,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: day06 FILE")
+		fmt.Fprintln(os.Stderr, "Usage: day07 FILE")
 	}
 
 	input, err := os.Open(os.Args[1])
@@ -40,10 +40,10 @@ func run(scan *bufio.Scanner) (uint64, uint64) {
 		game.plays = append(game.plays, Play{bid, []rune(cards), &game})
 	}
 
-	game.cardOrder = getOrder(1)
+	game.cardOrder = getOrder(cardTypes1)
 	product1 := calcProduct(game)
 
-	game.cardOrder = getOrder(2)
+	game.cardOrder = getOrder(cardTypes2)
 	game.wildCard = 'J'
 	product2 := calcProduct(game)
 
@@ -65,11 +65,7 @@ func calcProduct(game Game) uint64 {
 	return product
 }
 
-func getOrder(v int) map[rune]int {
-	cardTypes := cardTypes1
-	if v == 2 {
-		cardTypes = cardTypes2
-	}
+func getOrder(cardTypes []rune) map[rune]int {
 	cardOrder := make(map[rune]int, len(cardTypes))
 	for i, r := range cardTypes {
 		cardOrder[r] = len(cardTypes) - i
@@ -228,7 +224,7 @@ func (g *Game) Counts(cards []rune) map[rune]int {
 	}
 	return m
 }
-func (g *Game)hasSame(cards []rune) (has1, has2, has3, has4, has5 bool) {
+func (g *Game) hasSame(cards []rune) (has1, has2, has3, has4, has5 bool) {
 	cnt := g.Counts(cards)
 	for _, c := range cnt {
 		switch c {
