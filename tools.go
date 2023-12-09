@@ -4,20 +4,31 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func Runner[R any, F func(*bufio.Scanner) (R, error)](run F) (R, error) {
 	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage:", os.Args[0] , "FILE")
+		Log("Usage:", os.Args[0], "FILE")
+		os.Exit(22)
 	}
 
 	input, err := os.Open(os.Args[1])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		Log(err)
+		os.Exit(1)
 	}
 
 	scan := bufio.NewScanner(input)
 	return run(scan)
+}
+
+func Log(v ...any) { fmt.Fprintln(os.Stderr, v...) }
+func Logf(format string, v ...any) {
+	if !strings.HasSuffix(format, "\n") {
+		format += "\n"
+	}
+	fmt.Fprintf(os.Stderr, format, v...)
 }
 
 func Reverse[T any](arr []T) []T {
@@ -27,9 +38,16 @@ func Reverse[T any](arr []T) []T {
 	return arr
 }
 
+type integer interface {
+	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64
+}
+// type float interface {
+// 	complex64 | complex128 | float32 | float64
+// }
+// type number interface{ integer | float }
 
 // greatest common divisor (GCD) via Euclidean algorithm
-func GCD(a, b uint64) uint64 {
+func GCD[T integer](a, b T) T {
 	for b != 0 {
 		t := b
 		b = a % b
@@ -39,7 +57,7 @@ func GCD(a, b uint64) uint64 {
 }
 
 // find Least Common Multiple (LCM) via GCD
-func LCM(integers ...uint64) uint64 {
+func LCM[T integer](integers ...T) T {
 	if len(integers) == 0 {
 		return 0
 	}

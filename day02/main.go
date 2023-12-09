@@ -2,24 +2,39 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	_ "embed"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+
+	aoc "go.sour.is/advent-of-code-2023"
 )
 
-//go:embed input.txt
-var input []byte
+func main() {
+	result, err := aoc.Runner(run)
+	if err != nil {
+		aoc.Log("ERR", err)
+		os.Exit(1)
+	}
+
+	aoc.Log(result)
+}
+
+type result struct {
+	sum      int
+	powerSum int
+}
+
+func (r result) String() string {
+	return fmt.Sprintln("result pt1:", r.sum, "\nresult pt2:", r.powerSum)
+}
 
 type gameResult struct {
 	red, green, blue int
 }
 
-func main() {
-	buf := bytes.NewReader(input)
-	scan := bufio.NewScanner(buf)
-
+func run(scan *bufio.Scanner) (*result, error) {
 	// only 12 red cubes, 13 green cubes, and 14 blue cubes
 	maxCounts := gameResult{
 		red:   12,
@@ -62,8 +77,8 @@ func main() {
 		}
 	}
 
-	fmt.Println(games)
-	fmt.Println(len(games))
+	aoc.Log(games)
+	aoc.Log(len(games))
 
 	sum := 0
 	powerSum := 0
@@ -81,24 +96,24 @@ func main() {
 			mins.blue = max(mins.blue, round.blue)
 
 			if maxCounts.red < round.red {
-				fmt.Println("game", i, round, "too many red", round.red)
+				aoc.Log("game", i, round, "too many red", round.red)
 				ok = false
 			} else if maxCounts.blue < round.blue {
-				fmt.Println("game", i, round, "too many blue", round.blue)
+				aoc.Log("game", i, round, "too many blue", round.blue)
 				ok = false
 			} else if maxCounts.green < round.green {
-				fmt.Println("game", i, round, "too many green", round.green)
+				aoc.Log("game", i, round, "too many green", round.green)
 				ok = false
 			}
-			fmt.Println("game", i, round, ok)
+			aoc.Log("game", i, round, ok)
 		}
 		if ok {
 			sum += i
-			fmt.Println("game", i, "passes", sum)
+			aoc.Log("game", i, "passes", sum)
 		}
-		power := mins.red*mins.blue*mins.green
-		fmt.Println("game", i, "mins", mins, power)
+		power := mins.red * mins.blue * mins.green
+		aoc.Log("game", i, "mins", mins, power)
 		powerSum += power
 	}
-	fmt.Println("sum", sum, "power", powerSum)
+	return &result{sum, powerSum}, nil
 }
