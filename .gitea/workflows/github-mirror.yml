@@ -20,8 +20,8 @@ jobs:
       with:
         # GitHub Action output files
         source-directory: .
-        destination-github-username: sour-is
-        destination-repository-name: go-pkg
+        destination-github-username: jonlundy
+        destination-repository-name: advent-of-code
         user-email: jon@xuu.cc
         # It defaults to `main`
         target-branch: "main"
