@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -51,6 +52,7 @@ func Reverse[T any](arr []T) []T {
 type integer interface {
 	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64
 }
+
 // type float interface {
 // 	complex64 | complex128 | float32 | float64
 // }
@@ -83,4 +85,14 @@ func LCM[T integer](integers ...T) T {
 	}
 
 	return result
+}
+
+func ReadStringToInts(fields []string) []int {
+	arr := make([]int, len(fields))
+	for i, s := range fields {
+		if v, err := strconv.Atoi(s); err == nil {
+			arr[i] = v
+		}
+	}
+	return arr
 }

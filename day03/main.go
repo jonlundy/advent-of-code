@@ -2,14 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	_ "embed"
 	"fmt"
 	"strconv"
-)
 
-//go:embed input.txt
-var input []byte
+	aoc "go.sour.is/advent-of-code-2023"
+)
 
 type partNumber struct {
 	number    int
@@ -56,10 +54,14 @@ func (tab symbolTab) scanSymbol(p partNumber) bool {
 // 553079
 // 84363105
 
-func main() {
-	buf := bytes.NewReader(input)
-	scan := bufio.NewScanner(buf)
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
+type result struct {
+	valuePT1 int
+	valuePT2 int
+}
+
+func run(scan *bufio.Scanner) (*result, error) {
 	parts := []partNumber{}
 	symbols := make(symbolTab)
 	symbolList := []*symbol{}
@@ -95,6 +97,7 @@ func main() {
 		if v, err := strconv.Atoi(string(slice)); err == nil {
 			parts = append(parts, partNumber{number: v, row: row, col: col - len(slice), end: col - 1})
 			slice = slice[:0]
+			_ = slice
 		}
 	}
 
@@ -119,4 +122,5 @@ func main() {
 	// fmt.Println(symbolList)
 	fmt.Println("part1:", sum)
 	fmt.Println("part2:", sumGears)
+	return &result{sum, sumGears}, nil
 }

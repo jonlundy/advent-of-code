@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"cmp"
 	"fmt"
-	"strconv"
 	"strings"
 
 	aoc "go.sour.is/advent-of-code-2023"
@@ -31,13 +30,7 @@ func run(scan *bufio.Scanner) (*result, error) {
 		if len(text) == 0 {
 			continue
 		}
-		histories = append(histories, nil)
-
-		for _, s := range strings.Fields(text) {
-			if i, err := strconv.Atoi(s); err == nil {
-				histories[len(histories)-1] = append(histories[len(histories)-1], i)
-			}
-		}
+		histories = append(histories, aoc.ReadStringToInts(strings.Fields(text)))
 
 		log(last(histories...))
 
