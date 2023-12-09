@@ -2,25 +2,41 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	_ "embed"
 	"fmt"
+	"os"
 	"strings"
+
+	aoc "go.sour.is/advent-of-code-2023"
 )
 
-//go:embed input.txt
-var input []byte
-
 func main() {
-	buf := bytes.NewReader(input)
-	scan := bufio.NewScanner(buf)
+	result, err := aoc.Runner(run)
+	if err != nil {
+		fmt.Println("ERR", err)
+		os.Exit(1)
+	}
 
-	sum := 0
+	fmt.Println(result)
+}
+
+type result struct {
+	sum  int
+	sum2 int
+}
+
+func (r result) String() string {
+	return fmt.Sprintln("result pt1:", r.sum, "\nresult pt2:", r.sum2)
+}
+
+var numbers = []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
+
+func run(scan *bufio.Scanner) (*result, error) {
+	result := &result{}
+
 	for scan.Scan() {
 		var first, last int
-
-		orig := scan.Text()
-		_ = orig
+		var first2, last2 int
 
 		text := scan.Text()
 
@@ -30,110 +46,66 @@ func main() {
 
 			switch {
 			case slice[0] >= '0' && slice[0] <= '9':
-				first = int(slice[0] - '0')
-			case strings.HasPrefix(string(slice), "one"):
-				first = 1
-			case strings.HasPrefix(string(slice), "two"):
-				first = 2
-			case strings.HasPrefix(string(slice), "three"):
-				first = 3
-			case strings.HasPrefix(string(slice), "four"):
-				first = 4
-			case strings.HasPrefix(string(slice), "five"):
-				first = 5
-			case strings.HasPrefix(string(slice), "six"):
-				first = 6
-			case strings.HasPrefix(string(slice), "seven"):
-				first = 7
-			case strings.HasPrefix(string(slice), "eight"):
-				first = 8
-			case strings.HasPrefix(string(slice), "nine"):
-				first = 9
+				if first == 0 {
+					first = int(slice[0] - '0')
+				}
+				if first2 == 0 {
+					first2 = int(slice[0] - '0')
+				}
+			default:
+				if first2 != 0 {
+					continue
+				}
 
+				for i, s := range numbers {
+					if strings.HasPrefix(string(slice), s) {
+						first2 = i
+						break
+					}
+				}
 			}
-			if first != 0 {
+			if first != 0 && first2 != 0 {
 				break
 			}
 		}
 
-		text = string(reverse([]rune(text)))
+		text = string(aoc.Reverse([]rune(text)))
 
 		for i := range text {
 			copy(slice, []rune(text[i:]))
-			slice = reverse(slice)
+			slice = aoc.Reverse(slice)
 
 			switch {
 			case slice[4] >= '0' && slice[4] <= '9':
-				last = int(slice[4] - '0')
-			case strings.HasSuffix(string(slice), "one"):
-				last = 1
-			case strings.HasSuffix(string(slice), "two"):
-				last = 2
-			case strings.HasSuffix(string(slice), "three"):
-				last = 3
-			case strings.HasSuffix(string(slice), "four"):
-				last = 4
-			case strings.HasSuffix(string(slice), "five"):
-				last = 5
-			case strings.HasSuffix(string(slice), "six"):
-				last = 6
-			case strings.HasSuffix(string(slice), "seven"):
-				last = 7
-			case strings.HasSuffix(string(slice), "eight"):
-				last = 8
-			case strings.HasSuffix(string(slice), "nine"):
-				last = 9
+				if last == 0 {
+					last = int(slice[4] - '0')
+				}
+				if last2 == 0 {
+					last2 = int(slice[4] - '0')
+				}
+			default:
+				if last2 != 0 {
+					continue
+				}
+				for i, s := range numbers {
+					if strings.HasSuffix(string(slice), s) {
+						last2 = i
+						break
+					}
+				}
 
 			}
-			if last != 0 {
+			if last != 0 && last2 != 0 {
 				break
 			}
 		}
 
-		sum += first*10 + last
+		result.sum += first*10 + last
+		result.sum2 += first2*10 + last2
 	}
 	if err := scan.Err(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	fmt.Println(sum)
+	return result, nil
 }
-
-func reverse[T any](arr []T) []T{
-	for i := 0; i < len(arr)/2; i++ {
-		arr[i], arr[len(arr)-i-1] = arr[len(arr)-i-1], arr[i]
-	}
-	return arr
-}
-
-
-// type sorter[T rune | int] []T
-
-// func (s sorter[T]) Less(i, j int) bool { return s[i] < s[j] }
-// func (s sorter[T]) Len() int      { return len(s) }
-// func (s sorter[T]) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-/*
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-one
-two
-three
-four
-five
-six
-seven
-eight
-nine
-ten
-
-
-*/

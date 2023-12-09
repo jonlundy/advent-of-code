@@ -20,6 +20,14 @@ func Runner[R any, F func(*bufio.Scanner) (R, error)](run F) (R, error) {
 	return run(scan)
 }
 
+func Reverse[T any](arr []T) []T {
+	for i := 0; i < len(arr)/2; i++ {
+		arr[i], arr[len(arr)-i-1] = arr[len(arr)-i-1], arr[i]
+	}
+	return arr
+}
+
+
 // greatest common divisor (GCD) via Euclidean algorithm
 func GCD(a, b uint64) uint64 {
 	for b != 0 {
