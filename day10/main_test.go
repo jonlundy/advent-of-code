@@ -102,8 +102,9 @@ func TestInput(t *testing.T) {
 	is.True(result.valuePT1 != 51)
 	is.Equal(result.valuePT1, 6649)
 
-	// t.Log(result.valuePT2)
+	t.Log(result.valuePT2)
 	is.True(result.valuePT2 != 0)
+	is.Equal(result.valuePT2, 601)
 }
 
 // first: 51 false

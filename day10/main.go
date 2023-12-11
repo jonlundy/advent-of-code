@@ -8,7 +8,7 @@ import (
 	aoc "go.sour.is/advent-of-code-2023"
 )
 
-var log = aoc.Log
+// var log = aoc.Log
 
 func main() { aoc.MustResult(aoc.Runner(run)) }
 
@@ -20,7 +20,7 @@ type result struct {
 func (r result) String() string { return fmt.Sprintf("%#v", r) }
 
 func run(scan *bufio.Scanner) (*result, error) {
-	m := Path{s: -1}
+	m := &Path{s: -1}
 	for scan.Scan() {
 		text := scan.Text()
 		_ = text
@@ -28,39 +28,77 @@ func run(scan *bufio.Scanner) (*result, error) {
 		m.readLine(text)
 	}
 	dist := m.buildPath()
+	// log(m)
 
+	r := &Region{List: m.List, w: m.w, l: len(m.m)}
+	count := r.Count()
 
-
-	return &result{valuePT1: dist}, nil
+	return &result{valuePT1: dist, valuePT2: count}, nil
 }
 
 type node struct {
-	value       rune
-	pos         int
-	whence      int8
-	left, right *node
+	value  rune
+	pos    int
+	whence int8
+	left   *node
 }
 
 func (n *node) add(a *node) *node {
 	if a == nil {
 		return n
 	}
-	n.left, a.right = a, n
+	n.left = a
 	return a
 }
 
 func (n *node) String() string {
+	if n == nil {
+		return "EOL"
+	}
 	return fmt.Sprintf("node %s from %s", string(n.value), enum(n.whence))
+}
+
+type List struct {
+	head *node
+	n    *node
+	p    map[int]*node
+}
+
+func NewList(a *node) *List {
+	lis := &List{
+		head: a,
+		n:    a,
+		p:    make(map[int]*node),
+	}
+	lis.add(a)
+
+	return lis
+}
+func (l *List) add(a *node) {
+	l.n = l.n.add(a)
+	l.p[a.pos] = a
 }
 
 type Path struct {
 	m []rune
 	w int
 	s int
-	l int
-	n *node
+
+	*List
 }
 
+func (m *Path) String() string {
+	var buf strings.Builder
+	n := m.head
+
+	buf.WriteString(fmt.Sprintf("head %d", len(m.p)))
+	for n != nil {
+		buf.WriteString("\n ")
+		buf.WriteString(n.String())
+		n = n.left
+	}
+	return buf.String()
+}
 func (m *Path) readLine(text string) {
 	if m.w == 0 {
 		m.w = len(text)
@@ -75,29 +113,22 @@ func (m *Path) readLine(text string) {
 }
 func (m *Path) buildPath() int {
 	m.start()
-	// log(m.n)
-	i := 0
 	for m.next() {
-		// log(m.n)
-		i++
 	}
-	// log(m.n)
-	// log("length", (m.l+2)/2)
-	return (m.l+2)/2
+	return (len(m.p) + 1) / 2
 }
 func (m *Path) start() {
-	m.n = &node{value: 'S', pos: m.s}
-	// log(m.n)
+	m.List = NewList(&node{value: 'S', pos: m.s})
 
 	switch {
 	case m.peek(UP) != nil:
-		m.n = m.n.add(m.peek(UP))
+		m.add(m.peek(UP))
 	case m.peek(DN) != nil:
-		m.n = m.n.add(m.peek(DN))
+		m.add(m.peek(DN))
 	case m.peek(LF) != nil:
-		m.n = m.n.add(m.peek(LF))
+		m.add(m.peek(LF))
 	case m.peek(RT) != nil:
-		m.n = m.n.add(m.peek(RT))
+		m.add(m.peek(RT))
 	}
 }
 func (m *Path) next() bool {
@@ -141,12 +172,38 @@ func (m *Path) next() bool {
 		}
 	}
 	if n == nil {
+		return false 
+	}
+	if n.value == 'S' {
+		last := n.whence
+		next := m.head.left.whence
+
+		switch (last<<4)|next {
+		case 0x11, 0x22: m.n.value = '|' // UP UP, DN DN
+
+		case 0x13: m.head.value = 'J' // UP LF
+		case 0x14: m.head.value = 'L' // UP RT
+
+		case 0x23: m.head.value = '7' // DN LF
+		case 0x24: m.head.value = 'F' // DN RT
+
+		case 0x33, 0x44: m.head.value = '-' // LF LF, RT RT
+
+		case 0x31: m.head.value = '7' // LF UP 
+		case 0x32: m.head.value = 'J' // LF DN 
+
+		case 0x41: m.head.value = 'F' // RT UP
+		case 0x42: m.head.value = 'L' // RT DN 
+
+		}
+
 		return false
 	}
 
-	m.n = m.n.add(n)
-	m.l++
-	return m.n.value != 'S'
+	m.add(n)
+
+
+	return true
 }
 
 const (
@@ -184,7 +241,7 @@ func (m *Path) peek(d int8) *node {
 
 		p := fromXY(x, y-1, m.w)
 		r := m.m[p]
-		if any(r, '7', '|', 'F') {
+		if any(r, '7', '|', 'F', 'S') {
 			return &node{value: r, whence: DN, pos: p}
 		}
 	case DN:
@@ -195,7 +252,7 @@ func (m *Path) peek(d int8) *node {
 
 		p := fromXY(x, y+1, m.w)
 		r := m.m[p]
-		if any(r, 'J', '|', 'L') {
+		if any(r, 'J', '|', 'L', 'S') {
 			return &node{value: r, whence: UP, pos: p}
 		}
 
@@ -207,7 +264,7 @@ func (m *Path) peek(d int8) *node {
 
 		p := fromXY(x-1, y, m.w)
 		r := m.m[p]
-		if any(r, 'F', '-', 'L') {
+		if any(r, 'F', '-', 'L', 'S') {
 			return &node{value: r, whence: RT, pos: p}
 		}
 
@@ -218,7 +275,7 @@ func (m *Path) peek(d int8) *node {
 		}
 		p := fromXY(x+1, y, m.w)
 		r := m.m[p]
-		if any(r, '7', '-', 'J') {
+		if any(r, '7', '-', 'J', 'S') {
 			return &node{value: r, whence: LF, pos: p}
 		}
 
@@ -239,4 +296,42 @@ func any[T comparable](n T, stack ...T) bool {
 		}
 	}
 	return found
+}
+
+type Region struct {
+	*List
+	inLoop bool
+	count  int
+	w      int
+	l      int
+}
+
+func (r *Region) Count() int {
+	for i := 0; i < r.l; i++ {
+		if i%r.w == 0 {
+			r.inLoop = false
+			// fmt.Println(": ", i)
+		}
+
+		a, ok := r.p[i]
+		if ok && any(a.value, '|', '7', 'F', 'X') {
+			r.inLoop = !r.inLoop
+			// fmt.Print(string(a.value))
+			continue
+		}
+
+		if !ok && r.inLoop {
+			// fmt.Print("I")
+			r.count++
+			continue
+		}
+
+		if ok {
+			// fmt.Print(string(a.value))
+			continue
+		}
+		// fmt.Print(".")
+
+	}
+	return r.count
 }
