@@ -113,8 +113,7 @@ func (m *Path) readLine(text string) {
 }
 func (m *Path) buildPath() int {
 	m.start()
-	for m.next() {
-	}
+	for m.next() {}
 	return (len(m.p) + 1) / 2
 }
 func (m *Path) start() {
@@ -178,23 +177,15 @@ func (m *Path) next() bool {
 		last := n.whence
 		next := m.head.left.whence
 
-		switch (last<<4)|next {
-		case 0x11, 0x22: m.n.value = '|' // UP UP, DN DN
+		switch last<<4|next {
+		case UP<<4|UP, DN<<4|DN: m.head.value = '|' // UP UP, DN DN
+		case LF<<4|LF, RT<<4|RT: m.head.value = '-' // LF LF, RT RT
 
-		case 0x13: m.head.value = 'J' // UP LF
-		case 0x14: m.head.value = 'L' // UP RT
+		case UP<<4|RT, LF<<4|DN: m.head.value = 'J' // UP RT, LT DN
+		case UP<<4|LF, RT<<4|DN: m.head.value = 'L' // UP RT, RT DN 
 
-		case 0x23: m.head.value = '7' // DN LF
-		case 0x24: m.head.value = 'F' // DN RT
-
-		case 0x33, 0x44: m.head.value = '-' // LF LF, RT RT
-
-		case 0x31: m.head.value = '7' // LF UP 
-		case 0x32: m.head.value = 'J' // LF DN 
-
-		case 0x41: m.head.value = 'F' // RT UP
-		case 0x42: m.head.value = 'L' // RT DN 
-
+		case DN<<4|RT, LF<<4|UP: m.head.value = '7' // DN LF, LF UP 
+		case RT<<4|UP, DN<<4|LF: m.head.value = 'F' // DN LF, RT UP
 		}
 
 		return false
@@ -210,7 +201,7 @@ const (
 	ST int8 = iota
 	UP
 	DN
-	LF
+	LF 
 	RT
 )
 
@@ -255,7 +246,6 @@ func (m *Path) peek(d int8) *node {
 		if any(r, 'J', '|', 'L', 'S') {
 			return &node{value: r, whence: UP, pos: p}
 		}
-
 	case LF:
 		x, y := toXY(m.n.pos, m.w)
 		if x == 0 {
@@ -267,7 +257,6 @@ func (m *Path) peek(d int8) *node {
 		if any(r, 'F', '-', 'L', 'S') {
 			return &node{value: r, whence: RT, pos: p}
 		}
-
 	case RT:
 		x, y := toXY(m.n.pos, m.w)
 		if x == m.w {
@@ -278,7 +267,6 @@ func (m *Path) peek(d int8) *node {
 		if any(r, '7', '-', 'J', 'S') {
 			return &node{value: r, whence: LF, pos: p}
 		}
-
 	}
 	return nil
 }
