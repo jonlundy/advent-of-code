@@ -17,16 +17,18 @@ func TestExample(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(example))
 
-	points, cards := run(scan)
-	is.Equal(points, 13)
-	is.Equal(cards, 30)
+	r, err := run(scan)
+	is.NoErr(err)
+	is.Equal(r.points, 13)
+	is.Equal(r.cards, 30)
 }
 
 func TestSolution(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(input))
 
-	points, cards := run(scan)
-	is.Equal(points, 23235)
-	is.Equal(cards, 5920640)
+	r, err := run(scan)
+	is.NoErr(err)
+	is.Equal(r.points, 23235)
+	is.Equal(r.cards, 5920640)
 }
