@@ -183,7 +183,7 @@ func (l *List[T]) add(a *Node[T]) {
 func (l *List[T]) Get(pos int) *Node[T] {
 	return l.p[pos]
 }
-func(l *List[T]) GetN(pos ...int) []*Node[T] {
+func (l *List[T]) GetN(pos ...int) []*Node[T] {
 	lis := make([]*Node[T], len(pos))
 	for i, p := range pos {
 		lis[i] = l.p[p]
@@ -192,4 +192,61 @@ func(l *List[T]) GetN(pos ...int) []*Node[T] {
 }
 func (l *List[T]) Head() *Node[T] {
 	return l.head
+}
+
+func SliceMap[T, U any](fn func(T) U, in ...T) []U {
+	lis := make([]U, len(in))
+	for i := range lis {
+		lis[i] = fn(in[i])
+	}
+	return lis
+}
+func SliceIMap[T, U any](fn func(int, T) U, in ...T) []U {
+	lis := make([]U, len(in))
+	for i := range lis {
+		lis[i] = fn(i, in[i])
+	}
+	return lis
+}
+
+func Atoi(s string) int {
+	i, _ := strconv.Atoi(s)
+	return i
+}
+
+func Repeat(s string, i int) []string {
+	lis := make([]string, i)
+	for i := range lis {
+		lis[i] = s
+	}
+	return lis
+}
+
+func Sum[T integer](arr ...T) T {
+	var acc T
+	for _, a := range arr {
+		acc += a
+	}
+	return acc
+}
+func SumFunc[T any,U integer](fn func(T) U, input ...T) U {
+	return Sum(SliceMap(fn, input...)...)
+}
+func SumIFunc[T any,U integer](fn func(int, T) U, input ...T) U {
+	return Sum(SliceIMap(fn, input...)...)
+}
+
+func Power2(n int) int {
+	p := 2
+	for ; n > 1; n-- {
+		p *= 2
+	}
+	return p
+}
+
+func ABS(i int) int {
+	if i < 0 {
+		return -i
+	}
+	return i
 }

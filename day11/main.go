@@ -28,11 +28,6 @@ func run(scan *bufio.Scanner) (*result, error) {
 		text := scan.Text()
 		m.readLine(text)
 	}
-	// solution9 := m.expand(9).sumPaths()
-	// fmt.Println(solution9)
-
-	// solution99 := m.expand(99).sumPaths()
-	// fmt.Println(solution99)
 
 	return &result{
 		valuePT1: m.expand(1).sumPaths(),
@@ -69,8 +64,8 @@ func (m *Map) String() string {
 		n = n.Next()
 	}
 
-	for row:=0; row<m.rows; row++ {
-		for col:=0; col<m.cols; col++ {
+	for row := 0; row < m.rows; row++ {
+		for col := 0; col < m.cols; col++ {
 			if n := m.getRC(row, col); n != nil {
 				buf.WriteRune('#')
 			} else {
@@ -146,11 +141,11 @@ func (m *Map) expand(rate int) *Map {
 		for col := 0; col < m.cols; col++ {
 			if empty, ok := m.emptyCols[col]; ok && empty {
 				offsetC += rate
-				
+
 				continue
 			}
 
-			if n := m.getRC(row, col); n!= nil {
+			if n := m.getRC(row, col); n != nil {
 				newM.Add('#', fromXY(offsetC+col, offsetR+row, newM.cols))
 			}
 		}
@@ -158,7 +153,7 @@ func (m *Map) expand(rate int) *Map {
 
 	return newM
 }
-func(m *Map) sumPaths() int {
+func (m *Map) sumPaths() int {
 	var positions []int
 
 	n := m.Head()
@@ -170,21 +165,22 @@ func(m *Map) sumPaths() int {
 	var paths []int
 
 	for i := 0; i < len(positions); i++ {
-		p:= positions[i]
+		p := positions[i]
 		pXY := toXY(p, m.cols)
-		
+
 		for j := i; j < len(positions); j++ {
 			c := positions[j]
-			if c == p { continue }
+			if c == p {
+				continue
+			}
 
-			cXY := toXY(c, m.cols)			
+			cXY := toXY(c, m.cols)
 
-			path := abs(cXY[0]-pXY[0])+abs(cXY[1]-pXY[1])
-			paths = append(paths, path)		
+			path := aoc.ABS(cXY[0]-pXY[0]) + aoc.ABS(cXY[1]-pXY[1])
+			paths = append(paths, path)
 		}
-	
 	}
-	return sum(paths...)
+	return aoc.Sum(paths...)
 }
 
 func all(m map[int]bool) []int {
@@ -198,17 +194,4 @@ func all(m map[int]bool) []int {
 	return lis
 }
 func fromXY(x, y, w int) int { return y*w + x }
-func toXY(i, w int) []int    { return []int{i % w, i / w} }
-func abs(i int) int {
-	if i < 0 {
-		return -i
-	}
-	return i
-}
-func sum(arr ...int) int {
-	acc :=0
-	for _, a := range arr {
-		acc += a
-	}
-	return acc
-}
+func toXY(i, w int) [2]int    { return [2]int{i % w, i / w} }

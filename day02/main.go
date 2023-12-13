@@ -51,12 +51,10 @@ func run(scan *bufio.Scanner) (*result, error) {
 			continue
 		}
 
-		games = append(games, []gameResult{})
+		rounds := aoc.SliceMap(func(text string) gameResult {
+			round := gameResult{}
 
-		for _, round := range strings.Split(text, ";") {
-			game := gameResult{}
-
-			for _, result := range strings.Split(round, ",") {
+			for _, result := range strings.Split(text, ",") {
 				ns, color, _ := strings.Cut(strings.TrimSpace(result), " ")
 				n, err := strconv.Atoi(ns)
 				if err != nil {
@@ -65,16 +63,17 @@ func run(scan *bufio.Scanner) (*result, error) {
 
 				switch color {
 				case "red":
-					game.red = n
+					round.red = n
 				case "green":
-					game.green = n
+					round.green = n
 				case "blue":
-					game.blue = n
+					round.blue = n
 				}
-
 			}
-			games[len(games)-1] = append(games[len(games)-1], game)
-		}
+			return round
+		}, strings.Split(text, ";")...)
+
+		games = append(games, rounds)
 	}
 
 	aoc.Log(games)

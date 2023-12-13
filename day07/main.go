@@ -3,29 +3,19 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"sort"
+
+	aoc "go.sour.is/advent-of-code-2023"
 )
 
-func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: day07 FILE")
-	}
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
-	input, err := os.Open(os.Args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-
-	scan := bufio.NewScanner(input)
-
-	score1, score2 := run(scan)
-
-	fmt.Println("score 1", score1)
-	fmt.Println("score 2", score2)
+type result struct {
+	valuePT1 uint64
+	valuePT2 uint64
 }
 
-func run(scan *bufio.Scanner) (uint64, uint64) {
+func run(scan *bufio.Scanner) (result, error) {
 	var game Game
 
 	for scan.Scan() {
@@ -47,7 +37,7 @@ func run(scan *bufio.Scanner) (uint64, uint64) {
 	game.wildCard = 'J'
 	product2 := calcProduct(game)
 
-	return product1, product2
+	return result{product1, product2}, nil
 }
 
 var cardTypes1 = []rune{'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'}

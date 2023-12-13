@@ -9,6 +9,8 @@ import (
 	aoc "go.sour.is/advent-of-code-2023"
 )
 
+func main() { aoc.MustResult(aoc.Runner(run)) }
+
 type partNumber struct {
 	number    int
 	row       int
@@ -54,7 +56,6 @@ func (tab symbolTab) scanSymbol(p partNumber) bool {
 // 553079
 // 84363105
 
-func main() { aoc.MustResult(aoc.Runner(run)) }
 
 type result struct {
 	valuePT1 int
@@ -101,21 +102,23 @@ func run(scan *bufio.Scanner) (*result, error) {
 		}
 	}
 
-	sum := 0
-	for i, p := range parts {
-		ok := symbols.scanSymbol(p)
-		parts[i].hasSymbol = ok
-		if ok {
-			sum += p.number
-		}
-	}
+	sum := aoc.SumIFunc(
+		func(i int, p partNumber) int {
+			ok := symbols.scanSymbol(p)
+			parts[i].hasSymbol = ok
+			if ok {
+				return p.number
+			}
+			return 0
+		}, parts...,)
 
-	sumGears := 0
-	for _, s := range symbolList {
-		if s.symbol == '*' && len(s.adjacentParts) == 2 {
-			sumGears += s.adjacentParts[0].number * s.adjacentParts[1].number
-		}
-	}
+	sumGears := aoc.SumFunc(
+		func(s *symbol) int {
+			if s.symbol == '*' && len(s.adjacentParts) == 2 {
+				return s.adjacentParts[0].number * s.adjacentParts[1].number
+			}
+			return 0
+		}, symbolList...)
 
 	// fmt.Println(parts)
 	// fmt.Println(symbols)

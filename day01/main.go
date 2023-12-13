@@ -4,21 +4,12 @@ import (
 	"bufio"
 	_ "embed"
 	"fmt"
-	"os"
 	"strings"
 
 	aoc "go.sour.is/advent-of-code-2023"
 )
 
-func main() {
-	result, err := aoc.Runner(run)
-	if err != nil {
-		fmt.Println("ERR", err)
-		os.Exit(1)
-	}
-
-	fmt.Println(result)
-}
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
 type result struct {
 	sum  int

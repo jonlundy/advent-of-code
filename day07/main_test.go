@@ -54,19 +54,21 @@ func TestExample(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(example))
 
-	score1, score2 := run(scan)
-	is.Equal(score1, uint64(6440))
-	is.Equal(score2, uint64(5905))
+	r, err := run(scan)
+	is.NoErr(err)
+	is.Equal(r.valuePT1, uint64(6440))
+	is.Equal(r.valuePT2, uint64(5905))
 }
 
 func TestSolution(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(input))
 
-	score1, score2 := run(scan)
-	t.Log("score1", score1)
-	is.Equal(score1, uint64(248559379))
+	r, err := run(scan)
+	is.NoErr(err)
+	t.Log("score1", r.valuePT1)
+	is.Equal(r.valuePT1, uint64(248559379))
 
-	t.Log("score2", score2)
-	is.Equal(score2, uint64(249631254))
+	t.Log("score2", r.valuePT2)
+	is.Equal(r.valuePT2, uint64(249631254))
 }
