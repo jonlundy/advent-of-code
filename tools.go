@@ -250,3 +250,19 @@ func ABS(i int) int {
 	}
 	return i
 }
+
+func Transpose[T any](matrix [][]T) [][]T {
+	rows, cols := len(matrix), len(matrix[0])
+	
+	m := make([][]T, cols)
+	for i := range m {
+		m[i] = make([]T, rows)
+	}
+	
+	for i := 0; i < cols; i++ {
+		for j := 0; j < rows; j++ {
+			m[i][j] = matrix[j][i]
+		}
+	}
+	return m
+}
