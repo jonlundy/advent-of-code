@@ -63,19 +63,12 @@ type lens struct {
 	label string
 	value int
 }
-type box []lens
-type boxes [256]box
 
-func (lis boxes) String() string {
-	var buf strings.Builder
-	buf.WriteString("Boxes:\n")
-	for i, b := range lis {
-		if len(b) > 0 {
-			fmt.Fprintf(&buf, "Box %d: %v\n",i, b)
-		}
-	}
-	return buf.String()
+func (l lens) String() string {
+	return fmt.Sprintf("[%s %d]", l.label, l.value)
 }
+
+type box []lens
 
 func (lis box) String() string {
 	var buf strings.Builder
@@ -88,21 +81,34 @@ func (lis box) String() string {
 	return buf.String()
 }
 
-func (l lens) String() string {
-	return fmt.Sprintf("[%s %d]", l.label, l.value)
+type boxes [256]box
+
+func (lis boxes) String() string {
+	var buf strings.Builder
+	buf.WriteString("Boxes:\n")
+	for i, b := range lis {
+		if len(b) > 0 {
+			fmt.Fprintf(&buf, "Box %d: %v\n", i, b)
+		}
+	}
+	return buf.String()
 }
 
 func (lis boxes) Op(op string) boxes {
 	if a, _, ok := strings.Cut(op, "-"); ok {
 		i := hash(a)
+
 		pos := slices.IndexFunc(lis[i], func(l lens) bool { return l.label == a })
+
 		if pos >= 0 {
 			lis[i] = append(lis[i][:pos], lis[i][pos+1:]...)
 		}
 	} else if a, b, ok := strings.Cut(op, "="); ok {
 		i := hash(a)
-		pos := slices.IndexFunc(lis[i], func(l lens) bool { return l.label == a })
 		v := aoc.Atoi(b)
+
+		pos := slices.IndexFunc(lis[i], func(l lens) bool { return l.label == a })
+
 		if pos == -1 {
 			lis[i] = append(lis[i], lens{a, v})
 		} else {
@@ -113,7 +119,14 @@ func (lis boxes) Op(op string) boxes {
 	return lis
 }
 func (lis boxes) Sum() int {
-	sum := 0
+	// return aoc.Reduce(func(b int, box box, sum int) int {
+	// 	return aoc.Reduce(
+	// 		func(s int, lens lens, sum int) int {
+	// 			return sum + (b+1)*(s+1)*lens.value
+	// 		}, sum, box...)
+	// 	}, 0, lis[:]...)
+
+	var sum int
 	for b := range lis {
 		for s := range lis[b] {
 			sum += (b+1) * (s+1) * lis[b][s].value
