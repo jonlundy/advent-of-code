@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 //go:embed input.txt

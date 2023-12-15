@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 // var log = aoc.Log
@@ -194,4 +194,4 @@ func all(m map[int]bool) []int {
 	return lis
 }
 func fromXY(x, y, w int) int { return y*w + x }
-func toXY(i, w int) [2]int    { return [2]int{i % w, i / w} }
+func toXY(i, w int) [2]int   { return [2]int{i % w, i / w} }

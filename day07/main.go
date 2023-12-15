@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 func main() { aoc.MustResult(aoc.Runner(run)) }

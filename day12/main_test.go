@@ -7,7 +7,7 @@ import (
 
 	_ "embed"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 
 	"github.com/matryer/is"
 )

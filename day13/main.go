@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 var log = aoc.Log

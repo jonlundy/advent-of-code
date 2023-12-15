@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 // var log = aoc.Log
@@ -113,7 +113,8 @@ func (m *Path) readLine(text string) {
 }
 func (m *Path) buildPath() int {
 	m.start()
-	for m.next() {}
+	for m.next() {
+	}
 	return (len(m.p) + 1) / 2
 }
 func (m *Path) start() {
@@ -171,28 +172,33 @@ func (m *Path) next() bool {
 		}
 	}
 	if n == nil {
-		return false 
+		return false
 	}
 	if n.value == 'S' {
 		last := n.whence
 		next := m.head.left.whence
 
-		switch last<<4|next {
-		case UP<<4|UP, DN<<4|DN: m.head.value = '|' // UP UP, DN DN
-		case LF<<4|LF, RT<<4|RT: m.head.value = '-' // LF LF, RT RT
+		switch last<<4 | next {
+		case UP<<4 | UP, DN<<4 | DN:
+			m.head.value = '|' // UP UP, DN DN
+		case LF<<4 | LF, RT<<4 | RT:
+			m.head.value = '-' // LF LF, RT RT
 
-		case UP<<4|RT, LF<<4|DN: m.head.value = 'J' // UP RT, LT DN
-		case UP<<4|LF, RT<<4|DN: m.head.value = 'L' // UP RT, RT DN 
+		case UP<<4 | RT, LF<<4 | DN:
+			m.head.value = 'J' // UP RT, LT DN
+		case UP<<4 | LF, RT<<4 | DN:
+			m.head.value = 'L' // UP RT, RT DN
 
-		case DN<<4|RT, LF<<4|UP: m.head.value = '7' // DN LF, LF UP 
-		case RT<<4|UP, DN<<4|LF: m.head.value = 'F' // DN LF, RT UP
+		case DN<<4 | RT, LF<<4 | UP:
+			m.head.value = '7' // DN LF, LF UP
+		case RT<<4 | UP, DN<<4 | LF:
+			m.head.value = 'F' // DN LF, RT UP
 		}
 
 		return false
 	}
 
 	m.add(n)
-
 
 	return true
 }
@@ -201,7 +207,7 @@ const (
 	ST int8 = iota
 	UP
 	DN
-	LF 
+	LF
 	RT
 )
 

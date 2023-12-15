@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 	"golang.org/x/exp/maps"
 )
 
@@ -132,7 +132,6 @@ func reverse(m Map) Map {
 	}
 	return m
 }
-
 func cycle(m Map) (Map, [5]int) {
 	var current [5]int
 

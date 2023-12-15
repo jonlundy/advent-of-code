@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 func main() {
@@ -147,4 +147,3 @@ func (m nodeMap) SolvePT2(path []rune) uint64 {
 	}
 	return aoc.LCM(loops...)
 }
-

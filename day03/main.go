@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 func main() { aoc.MustResult(aoc.Runner(run)) }
@@ -55,7 +55,6 @@ func (tab symbolTab) scanSymbol(p partNumber) bool {
 
 // 553079
 // 84363105
-
 
 type result struct {
 	valuePT1 int
@@ -110,7 +109,7 @@ func run(scan *bufio.Scanner) (*result, error) {
 				return p.number
 			}
 			return 0
-		}, parts...,)
+		}, parts...)
 
 	sumGears := aoc.SumFunc(
 		func(s *symbol) int {

@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 var log = aoc.Log
@@ -129,7 +129,7 @@ func (lis boxes) Sum() int {
 	var sum int
 	for b := range lis {
 		for s := range lis[b] {
-			sum += (b+1) * (s+1) * lis[b][s].value
+			sum += (b + 1) * (s + 1) * lis[b][s].value
 		}
 	}
 	return sum

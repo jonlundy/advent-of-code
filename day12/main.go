@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	aoc "go.sour.is/advent-of-code-2023"
+	aoc "go.sour.is/advent-of-code"
 )
 
 // var log = aoc.Log
@@ -107,7 +107,7 @@ func countPossible(s []rune, c []int) int {
 	for len(cstates) > 0 {
 		for st, num := range cstates {
 			si, ci, cc, expdot := st.springIndex, st.groupIndex, st.continuous, st.expectDot
-			
+
 			// have we reached the end?
 			if si == len(s) {
 				if ci == len(c) {
