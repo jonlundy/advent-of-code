@@ -266,3 +266,10 @@ func Transpose[T any](matrix [][]T) [][]T {
 	}
 	return m
 }
+
+func Reduce[T, U any](fn func(int, T, U) U, u U, list ...T) U {
+	for i, t := range list {
+		u = fn(i, t, u)
+	} 
+	return u
+}
