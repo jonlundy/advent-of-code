@@ -2,6 +2,7 @@ package aoc
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -88,13 +89,7 @@ func LCM[T integer](integers ...T) T {
 }
 
 func ReadStringToInts(fields []string) []int {
-	arr := make([]int, len(fields))
-	for i, s := range fields {
-		if v, err := strconv.Atoi(s); err == nil {
-			arr[i] = v
-		}
-	}
-	return arr
+	return SliceMap(Atoi, fields...)
 }
 
 type Node[T any] struct {
@@ -214,8 +209,8 @@ func Atoi(s string) int {
 	return i
 }
 
-func Repeat(s string, i int) []string {
-	lis := make([]string, i)
+func Repeat[T any](s T, i int) []T {
+	lis := make([]T, i)
 	for i := range lis {
 		lis[i] = s
 	}
@@ -229,14 +224,17 @@ func Sum[T integer](arr ...T) T {
 	}
 	return acc
 }
-func SumFunc[T any,U integer](fn func(T) U, input ...T) U {
+func SumFunc[T any, U integer](fn func(T) U, input ...T) U {
 	return Sum(SliceMap(fn, input...)...)
 }
-func SumIFunc[T any,U integer](fn func(int, T) U, input ...T) U {
+func SumIFunc[T any, U integer](fn func(int, T) U, input ...T) U {
 	return Sum(SliceIMap(fn, input...)...)
 }
 
 func Power2(n int) int {
+	if n == 0 {
+		return 1
+	}
 	p := 2
 	for ; n > 1; n-- {
 		p *= 2
@@ -253,12 +251,12 @@ func ABS(i int) int {
 
 func Transpose[T any](matrix [][]T) [][]T {
 	rows, cols := len(matrix), len(matrix[0])
-	
+
 	m := make([][]T, cols)
 	for i := range m {
 		m[i] = make([]T, rows)
 	}
-	
+
 	for i := 0; i < cols; i++ {
 		for j := 0; j < rows; j++ {
 			m[i][j] = matrix[j][i]
@@ -270,6 +268,23 @@ func Transpose[T any](matrix [][]T) [][]T {
 func Reduce[T, U any](fn func(int, T, U) U, u U, list ...T) U {
 	for i, t := range list {
 		u = fn(i, t, u)
-	} 
+	}
 	return u
+}
+
+func Max[T cmp.Ordered](a T, v ...T) T {
+	for _, b := range v {
+		if b > a {
+			a = b
+		}
+	}
+	return a
+}
+func Min[T cmp.Ordered](a T, v ...T) T {
+	for _, b := range v {
+		if b < a {
+			a = b
+		}
+	}
+	return a
 }
