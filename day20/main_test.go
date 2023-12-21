@@ -52,5 +52,5 @@ func TestSolution(t *testing.T) {
 
 	t.Log(result)
 	is.Equal(result.valuePT1, 819397964)
-	is.Equal(result.valuePT2, 0)
+	is.Equal(result.valuePT2, 252667369442479)
 }
