@@ -1,4 +1,4 @@
-module go.sour.is/advent-of-code-2023
+module go.sour.is/advent-of-code
 
 go 1.21.3
 
