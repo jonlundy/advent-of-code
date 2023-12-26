@@ -51,10 +51,10 @@ func Reverse[T any](arr []T) []T {
 	return arr
 }
 
-type uinteger interface{
+type uinteger interface {
 	uint | uint8 | uint16 | uint32 | uint64
 }
-type sinteger interface{
+type sinteger interface {
 	int | int8 | int16 | int32 | int64
 }
 type integer interface {
@@ -342,21 +342,22 @@ type Vertex[V comparable, I integer] struct {
 type graph[V comparable, I uinteger] struct {
 	adj map[V][]Vertex[V, I]
 }
-func Graph[V comparable, I uinteger](size int) *graph[V,I] {
-	return &graph[V,I]{
-		adj:  make(map[V][]Vertex[V,I], size),
+
+func Graph[V comparable, I uinteger](size int) *graph[V, I] {
+	return &graph[V, I]{
+		adj: make(map[V][]Vertex[V, I], size),
 	}
 }
-func (g *graph[V,I]) AddEdge(u, v V, w I) {
+func (g *graph[V, I]) AddEdge(u, v V, w I) {
 	g.adj[u] = append(g.adj[u], Vertex[V, I]{to: v, score: w})
 	g.adj[v] = append(g.adj[v], Vertex[V, I]{to: u, score: w})
 }
-func (g *graph[V,I]) Dijkstra(src V) {
-	pq := PriorityQueue[V,I]{}
+func (g *graph[V, I]) Dijkstra(m interface{Get()}, src V) map[V]I {
+	pq := PriorityQueue[V, I]{}
 	dist := make(map[V]I, len(g.adj))
 	visited := make(map[V]bool, len(g.adj))
 	var INF I
-	INF = ^INF>>1
+	INF = ^INF
 
 	pq.Enqueue(src, 0)
 	dist[src] = 0
@@ -373,23 +374,22 @@ func (g *graph[V,I]) Dijkstra(src V) {
 			_, ok := visited[v.to]
 			var du, dv I
 			if d, inf := dist[u]; !inf {
-				du=INF
+				du = INF
 			} else {
 				du = d
 			}
 			if d, inf := dist[v.to]; !inf {
-				dv=INF
+				dv = INF
 			} else {
 				dv = d
-			} 
+			}
 
-			if !ok && du + v.score < dv {
+			if !ok && du+v.score < dv {
 				dist[v.to] = du + v.score
-				pq.Enqueue(v.to, du + v.score)
+				pq.Enqueue(v.to, du+v.score)
 			}
 		}
 	}
-	for v, w := range dist {
-		fmt.Printf("%v, %v\n", v, w)
-	}
+
+	return dist
 }
