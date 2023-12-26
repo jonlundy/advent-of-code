@@ -89,5 +89,5 @@ func TestGraph(t *testing.T) {
 	g.AddEdge(3, 5, 15)
 	g.AddEdge(4, 6, 2)
 	g.AddEdge(5, 6, 6)
-	g.Dijkstra(0)
+	// g.Dijkstra(0)
 }

@@ -25,7 +25,7 @@ func TestExample(t *testing.T) {
 
 	t.Log(result)
 	is.Equal(result.valuePT1, 102)
-	is.Equal(result.valuePT2, 0)
+	is.Equal(result.valuePT2, 94)
 }
 
 func TestSolution(t *testing.T) {
@@ -36,6 +36,6 @@ func TestSolution(t *testing.T) {
 	is.NoErr(err)
 
 	t.Log(result)
-	is.Equal(result.valuePT1, 0)
-	is.Equal(result.valuePT2, 0)
+	is.Equal(result.valuePT1, 843)
+	is.Equal(result.valuePT2, 1017)
 }
