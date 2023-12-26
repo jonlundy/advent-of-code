@@ -1,0 +1,30 @@
+name: Go Bump
+
+on: 
+  push:
+    branches: [ "main" ]
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+        
+    - name: Deploy to external repository
+      uses: https://git.sour.is/actions/github-action-push-to-another-repository@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      with:
+        # GitHub Action output files
+        source-directory: .
+        destination-github-username: jonlundy
+        destination-repository-name: advent-of-code
+        user-email: jon@xuu.cc
+        # It defaults to `main`
+        target-branch: "main"
+
+    - run: echo "🍏 This job's status is ${{ job.status }}."
+

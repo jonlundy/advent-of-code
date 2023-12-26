@@ -7,27 +7,18 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	aoc "go.sour.is/advent-of-code"
 )
 
-func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: day05 FILE")
-	}
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
-	input, err := os.Open(os.Args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-
-	scan := bufio.NewScanner(input)
-
-	minLocation, minRangeLocation := run(scan)
-
-	fmt.Println("min location:", minLocation)
-	fmt.Println("min range location:", minRangeLocation)
+type result struct {
+	minLocation int
+	minRange    int
 }
 
-func run(scan *bufio.Scanner) (int, int) {
+func run(scan *bufio.Scanner) (result, error) {
 	log("begin...")
 
 	var seeds []int
@@ -55,15 +46,14 @@ func run(scan *bufio.Scanner) (int, int) {
 		lookup["humidity-to-location"],
 	)
 
-	return findMinLocation(seeds, find), FindMinRangeLocationMulti(seedRanges, find)
+	return result{findMinLocation(seeds, find), FindMinRangeLocationMulti(seedRanges, find)}, nil
 }
 
 func readSeeds(text string) ([]int, [][2]int) {
-	var seeds [] int 
+	var seeds []int
 	var seedRanges [][2]int
-	sp := strings.Fields(strings.TrimPrefix(text, "seeds: "))
-	for i, s := range sp {
-		n, _ := strconv.Atoi(s)
+
+	for i, n := range aoc.SliceMap(aoc.Atoi, strings.Fields(strings.TrimPrefix(text, "seeds: "))...) {
 		seeds = append(seeds, n)
 
 		if i%2 == 0 {
@@ -121,7 +111,7 @@ func FindMinRangeLocation(ranges [][2]int, find *Finder) int {
 
 	for _, s := range ranges {
 		for i := 0; i < s[1]; i++ {
-			seedLocations = append(seedLocations, find.Find(s[0] + i))
+			seedLocations = append(seedLocations, find.Find(s[0]+i))
 		}
 	}
 	return min(seedLocations...)
@@ -164,7 +154,7 @@ func FindMinRangeLocationMulti(ranges [][2]int, find *Finder) int {
 	seedLocations := make([]int, 0, results)
 	expectResults := make([]struct{}, len(ranges))
 	for range expectResults {
-		r := <- resultsCh
+		r := <-resultsCh
 		seedLocations = append(seedLocations, r...)
 	}
 

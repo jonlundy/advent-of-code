@@ -2,13 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	_ "embed"
-	"fmt"
 	"log/slog"
-	"os"
 	"strconv"
 	"strings"
+
+	aoc "go.sour.is/advent-of-code"
 )
 
 //go:embed input.txt
@@ -21,22 +20,14 @@ type card struct {
 	copies  int
 }
 
-func main() {
-	var level slog.Level
-	if err := level.UnmarshalText([]byte(os.Getenv("DEBUG_LEVEL"))); err == nil && level != 0 {
-		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
-	}
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
-	buf := bytes.NewReader(input)
-	scan := bufio.NewScanner(buf)
-
-	points, cards := run(scan)
-
-	fmt.Println("points:", points)
-	fmt.Println("cards:", cards)
+type result struct {
+	points int
+	cards  int
 }
 
-func run(scan *bufio.Scanner) (int, int) {
+func run(scan *bufio.Scanner) (result, error) {
 	cards := []*card{}
 
 	for scan.Scan() {
@@ -46,7 +37,7 @@ func run(scan *bufio.Scanner) (int, int) {
 			continue
 		}
 
-		num, _ := strconv.Atoi(strings.TrimSpace(strings.SplitN(pfx, " ", 2)[1]))
+		num := aoc.Atoi(strings.TrimSpace(strings.SplitN(pfx, " ", 2)[1]))
 		cards = append(cards, &card{card: num})
 		buf := make([]rune, 0, 4)
 		winner := true
@@ -71,7 +62,7 @@ func run(scan *bufio.Scanner) (int, int) {
 		}
 
 		if len(buf) > 0 {
-			num, _ = strconv.Atoi(string(buf))
+			num = aoc.Atoi(string(buf))
 			buf = buf[:0]
 			_ = buf // ignore
 			cards[len(cards)-1].scratch = append(cards[len(cards)-1].scratch, num)
@@ -105,5 +96,5 @@ func run(scan *bufio.Scanner) (int, int) {
 		slog.Debug("points", "card", card.card, "match", m, "score", sumPoints)
 	}
 
-	return sumPoints, sumCards
+	return result{sumPoints, sumCards}, nil
 }

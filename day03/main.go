@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	_ "embed"
 	"fmt"
 	"strconv"
+
+	aoc "go.sour.is/advent-of-code"
 )
 
-//go:embed input.txt
-var input []byte
+func main() { aoc.MustResult(aoc.Runner(run)) }
 
 type partNumber struct {
 	number    int
@@ -56,10 +56,12 @@ func (tab symbolTab) scanSymbol(p partNumber) bool {
 // 553079
 // 84363105
 
-func main() {
-	buf := bytes.NewReader(input)
-	scan := bufio.NewScanner(buf)
+type result struct {
+	valuePT1 int
+	valuePT2 int
+}
 
+func run(scan *bufio.Scanner) (*result, error) {
 	parts := []partNumber{}
 	symbols := make(symbolTab)
 	symbolList := []*symbol{}
@@ -95,28 +97,32 @@ func main() {
 		if v, err := strconv.Atoi(string(slice)); err == nil {
 			parts = append(parts, partNumber{number: v, row: row, col: col - len(slice), end: col - 1})
 			slice = slice[:0]
+			_ = slice
 		}
 	}
 
-	sum := 0
-	for i, p := range parts {
-		ok := symbols.scanSymbol(p)
-		parts[i].hasSymbol = ok
-		if ok {
-			sum += p.number
-		}
-	}
+	sum := aoc.SumIFunc(
+		func(i int, p partNumber) int {
+			ok := symbols.scanSymbol(p)
+			parts[i].hasSymbol = ok
+			if ok {
+				return p.number
+			}
+			return 0
+		}, parts...)
 
-	sumGears := 0
-	for _, s := range symbolList {
-		if s.symbol == '*' && len(s.adjacentParts) == 2 {
-			sumGears += s.adjacentParts[0].number * s.adjacentParts[1].number
-		}
-	}
+	sumGears := aoc.SumFunc(
+		func(s *symbol) int {
+			if s.symbol == '*' && len(s.adjacentParts) == 2 {
+				return s.adjacentParts[0].number * s.adjacentParts[1].number
+			}
+			return 0
+		}, symbolList...)
 
 	// fmt.Println(parts)
 	// fmt.Println(symbols)
 	// fmt.Println(symbolList)
 	fmt.Println("part1:", sum)
 	fmt.Println("part2:", sumGears)
+	return &result{sum, sumGears}, nil
 }

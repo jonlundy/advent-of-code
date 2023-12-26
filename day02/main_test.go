@@ -13,22 +13,29 @@ import (
 //go:embed example.txt
 var example []byte
 
+//go:embed input.txt
+var input []byte
+
 func TestExample(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(example))
 
-	r, err := run(scan)
+	result, err := run(scan)
 	is.NoErr(err)
-	is.Equal(r.points, 13)
-	is.Equal(r.cards, 30)
+
+	t.Log(result)
+	is.Equal(result.sum, 8)
+	is.Equal(result.powerSum, 2286)
 }
 
 func TestSolution(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(input))
 
-	r, err := run(scan)
+	result, err := run(scan)
 	is.NoErr(err)
-	is.Equal(r.points, 23235)
-	is.Equal(r.cards, 5920640)
+
+	t.Log(result)
+	is.Equal(result.sum, 2317)
+	is.Equal(result.powerSum, 74804)
 }
