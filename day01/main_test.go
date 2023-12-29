@@ -30,7 +30,6 @@ func TestExample1(t *testing.T) {
 	is.Equal(result.sum, 142)
 }
 
-
 func TestExample2(t *testing.T) {
 	is := is.New(t)
 	scan := bufio.NewScanner(bytes.NewReader(example2))

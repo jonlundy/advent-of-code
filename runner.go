@@ -41,7 +41,6 @@ func Logf(format string, v ...any) {
 	fmt.Fprintf(os.Stderr, format, v...)
 }
 
-
 func ReadStringToInts(fields []string) []int {
 	return SliceMap(Atoi, fields...)
 }

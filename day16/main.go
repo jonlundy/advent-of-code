@@ -32,15 +32,15 @@ func run(scan *bufio.Scanner) (*result, error) {
 
 	options := make([]int, 2*(rows+cols)+2)
 	i := 0
-	for j:=0; j<=rows-1; j++ {
+	for j := 0; j <= rows-1; j++ {
 		options[i+0] = runCycle(m, ray{[2]int{j, -1}, RT})
 		options[i+1] = runCycle(m, ray{[2]int{j, cols}, LF})
-		i+=2
+		i += 2
 	}
-	for j:=0; j<=cols-1; j++ {
+	for j := 0; j <= cols-1; j++ {
 		options[i+0] = runCycle(m, ray{[2]int{-1, j}, DN})
 		options[i+1] = runCycle(m, ray{[2]int{rows, j}, UP})
-		i+=2
+		i += 2
 	}
 
 	// fmt.Println(options)
@@ -95,7 +95,6 @@ func (m *Map) Get(p [2]int) rune {
 
 	return (*m)[p[0]][p[1]]
 }
-
 
 func runCycle(m Map, r ray) int {
 	current := r

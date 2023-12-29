@@ -4,9 +4,9 @@ import (
 	"bufio"
 	_ "embed"
 	"fmt"
-	"sort"
 
 	aoc "go.sour.is/advent-of-code"
+	"golang.org/x/exp/maps"
 )
 
 // var log = aoc.Log
@@ -21,7 +21,7 @@ type result struct {
 func (r result) String() string { return fmt.Sprintf("%#v", r) }
 
 func run(scan *bufio.Scanner) (*result, error) {
-	var m Map
+	var m aoc.Map[rune]
 
 	for scan.Scan() {
 		text := scan.Text()
@@ -35,180 +35,97 @@ func run(scan *bufio.Scanner) (*result, error) {
 	return &result, nil
 }
 
-var (
-	ZERO = point{0, 0}
+func search(m aoc.Map[rune], minSteps, maxSteps int) int {
+	type direction int8
+	type rotate int8
 
-	UP = point{-1, 0}
-	DN = point{1, 0}
-	LF = point{0, -1}
-	RT = point{0, 1}
+	const (
+		CW  rotate = 1
+		CCW rotate = -1
+	)
 
-	INF = int(^uint(0) >> 1)
-)
+	var (
+		U = aoc.Point{-1, 0}
+		R = aoc.Point{0, 1}
+		D = aoc.Point{1, 0}
+		L = aoc.Point{0, -1}
+	)
 
-type Map [][]rune
+	var Directions = map[aoc.Point]direction{
+		U: 0, // U
+		R: 1, // R
+		D: 2, // D
+		L: 3, // L
+	}
+	var DirectionIDX = maps.Keys(Directions)
 
-func (m *Map) Get(p point) (point, int, bool) {
-	if !m.Valid(p) {
-		return [2]int{0, 0}, 0, false
+	rows, cols := m.Size()
+	target := aoc.Point{rows - 1, cols - 1}
+
+	type position struct {
+		loc       aoc.Point
+		direction aoc.Point
+		steps     int
 	}
 
-	return p, int((*m)[p[0]][p[1]] - '0'), true
-}
-func (m *Map) GetNeighbor(p point, d point) (point, int, bool) {
-	return m.Get(p.add(d))
-}
-func (m *Map) Size() (int, int) {
-	if m == nil || len(*m) == 0 {
-		return 0, 0
+	step := func(p position) position {
+		return position{p.loc.Add(p.direction), p.direction, p.steps + 1}
 	}
-	return len(*m), len((*m)[0])
-}
-func (m *Map) Neighbors(p point) []point {
-	var lis []point
-	for _, d := range []point{UP, DN, LF, RT} {
-		if p, _, ok := m.GetNeighbor(p, d); ok {
-			lis = append(lis, p)
+	rotateAndStep := func(p position, towards rotate) position {
+		d := DirectionIDX[(int8(Directions[p.direction])+int8(towards)+4)%4]
+		return position{p.loc.Add(d), d, 1}
+	}
+
+	type memo struct {
+		cost int
+		position
+	}
+	less := func(a, b memo) bool {
+		if a.cost != b.cost {
+			return a.cost < b.cost
 		}
-	}
-	return lis
-}
-func (m *Map) NeighborDirections(p point) []point {
-	var lis []point
-	for _, d := range []point{UP, DN, LF, RT} {
-		if m.Valid(p.add(d)) {
-			lis = append(lis, d)
+		if a.position.loc != b.position.loc {
+			return b.position.loc.Less(a.position.loc)
 		}
-	}
-	return lis
-}
-func (m *Map) Valid(p point) bool {
-	rows, cols := m.Size()
-	return p[0] >= 0 && p[0] < rows && p[1] >= 0 && p[1] < cols
-}
-
-type memo struct {
-	h int
-	s int
-	p point
-	d point
-}
-
-func (memo) sort(a, b memo) bool {
-	if a.h != b.h {
-		return a.h < b.h
+		if a.position.direction != b.position.direction {
+			return b.position.direction.Less(a.position.direction)
+		}
+		return b.steps < a.steps
 	}
 
-	if a.s != b.s {
-		return a.s < b.s
-	}
+	pq := aoc.PriorityQueue(less)
+	pq.Enqueue(memo{position: position{direction: D}})
+	pq.Enqueue(memo{position: position{direction: R}})
+	visited := aoc.Set[position]()
 
-	if a.p != b.p {
-		return a.p.less(b.p)
-	}
-
-	return a.d.less(b.d)
-}
-
-type priorityQueue[T any, U []T] struct {
-	elems U
-	sort  func(a, b T) bool
-}
-
-func PriorityQueue[T any, U []T](sort func(a, b T) bool) *priorityQueue[T, U] {
-	return &priorityQueue[T, U]{sort: sort}
-}
-func (pq *priorityQueue[T, U]) Enqueue(elem T) {
-	pq.elems = append(pq.elems, elem)
-	sort.Slice(pq.elems, func(i, j int) bool { return pq.sort(pq.elems[i], pq.elems[j]) })
-}
-func (pq *priorityQueue[T, I]) IsEmpty() bool {
-	return len(pq.elems) == 0
-}
-func (pq *priorityQueue[T, I]) Dequeue() (T, bool) {
-	var elem T
-	if pq.IsEmpty() {
-		return elem, false
-	}
-
-	elem, pq.elems = pq.elems[0], pq.elems[1:]
-	return elem, true
-}
-
-func heuristic(m Map, p point) int {
-	rows, cols := m.Size()
-	return rows - p[0] + cols - p[1]
-}
-
-func search(m Map, minSize, maxSize int) int {
-	rows, cols := m.Size()
-	END := point{rows - 1, cols - 1}
-
-	visited := make(map[vector]int)
-	pq := PriorityQueue(memo{}.sort)
-	pq.Enqueue(memo{h: heuristic(m, point{0, 0}), p: point{0, 0}, d: DN})
-	
 	for !pq.IsEmpty() {
-		mem, _ := pq.Dequeue()
-		fmt.Println(mem)
-		if mem.h > dmap(visited, vector{mem.p[0], mem.p[1], mem.d[0], mem.d[1]}, INF) {
+		current, _ := pq.Dequeue()
+
+		if current.loc == target && current.steps >= minSteps {
+			return current.cost
+		}
+
+		seen := position{loc: current.loc, steps: current.steps}
+		if visited.Has(seen) {
 			continue
 		}
+		visited.Add(seen)
 
-		if mem.p == END {
-			return mem.s
+		if left := rotateAndStep(current.position, CCW); current.steps >= minSteps && m.Valid(left.loc) {
+			_, cost, _ := m.Get(left.loc)
+			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: left})
 		}
 
-		for _, nd := range m.NeighborDirections(mem.p) {
-			if nd[0] == 0 && mem.d == RT || nd[1] == 0 && mem.d == DN {
-				continue
-			}
+		if right := rotateAndStep(current.position, CW); current.steps >= minSteps && m.Valid(right.loc) {
+			_, cost, _ := m.Get(right.loc)
+			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: right})
+		}
 
-			dscore := 0
-
-			for _, size := range irange(1, maxSize+1) {
-				np := mem.p.add(nd.scale(size))
-				_, s, ok := m.Get(np)
-
-				if !ok {
-					break
-				}
-
-				dscore += s
-				pscore := mem.s + dscore
-
-				nh := heuristic(m, np) + pscore
-				vec := vector{np[0], np[1], nd[0], nd[1]}
-
-				if size >= minSize && nh < dmap(visited, vec, INF) {
-					pq.Enqueue(memo{nh, pscore, np, nd})
-					visited[vec] = nh
-				}
-			}
+		if forward := step(current.position); current.steps < maxSteps && m.Valid(forward.loc) {
+			_, cost, _ := m.Get(forward.loc)
+			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: forward})
 		}
 	}
 
-	return 0
+	return -1
 }
-
-func dmap[K comparable, V any](m map[K]V, k K, d V) V {
-	if v, ok := m[k]; ok {
-		return v
-	}
-	return d
-}
-func irange(a, b int) []int {
-	lis := make([]int, b-a)
-	for i := range lis {
-		lis[i] = i + a
-	}
-	return lis
-}
-
-type point [2]int
-
-func (p point) add(a point) point { return point{p[0] + a[0], p[1] + a[1]} }
-func (p point) scale(m int) point { return point{p[0] * m, p[1] * m} }
-func (p point) less(a point) bool { return p[0] < a[0] || p[1] < a[1] }
-
-type vector [4]int

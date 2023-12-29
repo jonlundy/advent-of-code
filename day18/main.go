@@ -65,7 +65,7 @@ func fromLine(text string) (aoc.Vector, string) {
 	s, _, _ = strings.Cut(text, ")")
 	return v, s
 }
- 
+
 func fromColor(c string) aoc.Vector {
 	scale, _ := strconv.ParseInt(c[:5], 16, 64)
 	offset := OFFSET_INDEXES[c[5]-'0']
@@ -77,7 +77,7 @@ func fromColor(c string) aoc.Vector {
 }
 
 func findArea(vecs []aoc.Vector) int {
-	shoelace := []aoc.Point{{0,0}}
+	shoelace := []aoc.Point{{0, 0}}
 	borderLength := 0
 
 	for _, vec := range vecs {
@@ -87,4 +87,3 @@ func findArea(vecs []aoc.Vector) int {
 
 	return aoc.NumPoints(shoelace, borderLength)
 }
-
