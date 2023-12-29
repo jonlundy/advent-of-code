@@ -17,6 +17,12 @@ func (p Point) Add(a Point) Point {
 func (p Point) Scale(m int) Point {
 	return Point{p[0] * m, p[1] * m}
 }
+func (p Point) Less(b Point) bool {
+	if p[0] != b[0] {
+		return p[0] < b[0]
+	}
+	return p[1] < b[1]
+}
 
 func Transpose[T any](matrix [][]T) [][]T {
 	rows, cols := len(matrix), len(matrix[0])
@@ -48,4 +54,25 @@ func NumPoints(outline []Point, borderLength int) int {
 
 	// pick's theorem - find the number of points in a shape given its area
 	return (ABS(area) - borderLength/2 + 1) + borderLength
+}
+
+type Map[T any] [][]T
+
+func (m *Map[T]) Get(p Point) (Point, T, bool) {
+	var zero T
+	if !m.Valid(p) {
+		return [2]int{0, 0}, zero, false
+	}
+
+	return p, (*m)[p[0]][p[1]], true
+}
+func (m *Map[T]) Size() (int, int) {
+	if m == nil || len(*m) == 0 {
+		return 0, 0
+	}
+	return len(*m), len((*m)[0])
+}
+func (m *Map[T]) Valid(p Point) bool {
+	rows, cols := m.Size()
+	return p[0] >= 0 && p[0] < rows && p[1] >= 0 && p[1] < cols
 }

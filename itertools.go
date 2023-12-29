@@ -31,7 +31,6 @@ func Reverse[T any](arr []T) []T {
 	return arr
 }
 
-
 func SliceMap[T, U any](fn func(T) U, in ...T) []U {
 	lis := make([]U, len(in))
 	for i := range lis {

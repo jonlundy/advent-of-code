@@ -2,7 +2,6 @@ package aoc
 
 import "fmt"
 
-
 type Node[T any] struct {
 	value T
 	pos   int
