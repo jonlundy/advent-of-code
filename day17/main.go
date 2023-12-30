@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	aoc "go.sour.is/advent-of-code"
-	"golang.org/x/exp/maps"
 )
 
 // var log = aoc.Log
@@ -51,13 +50,12 @@ func search(m aoc.Map[rune], minSteps, maxSteps int) int {
 		L = aoc.Point{0, -1}
 	)
 
-	var Directions = map[aoc.Point]direction{
-		U: 0, // U
-		R: 1, // R
-		D: 2, // D
-		L: 3, // L
+	var Direction = []aoc.Point{U, R, D, L}
+
+	var Directions = make(map[aoc.Point]direction, len(Direction))
+	for k, v := range Direction {
+		Directions[v] = direction(k)
 	}
-	var DirectionIDX = maps.Keys(Directions)
 
 	rows, cols := m.Size()
 	target := aoc.Point{rows - 1, cols - 1}
@@ -72,7 +70,8 @@ func search(m aoc.Map[rune], minSteps, maxSteps int) int {
 		return position{p.loc.Add(p.direction), p.direction, p.steps + 1}
 	}
 	rotateAndStep := func(p position, towards rotate) position {
-		d := DirectionIDX[(int8(Directions[p.direction])+int8(towards)+4)%4]
+		d := Direction[(int8(Directions[p.direction])+int8(towards)+4)%4]
+		// fmt.Println(towards, Directions[p.direction], "->", Directions[d])
 		return position{p.loc.Add(d), d, 1}
 	}
 
@@ -90,7 +89,7 @@ func search(m aoc.Map[rune], minSteps, maxSteps int) int {
 		if a.position.direction != b.position.direction {
 			return b.position.direction.Less(a.position.direction)
 		}
-		return b.steps < a.steps
+		return a.steps < b.steps
 	}
 
 	pq := aoc.PriorityQueue(less)
@@ -105,27 +104,34 @@ func search(m aoc.Map[rune], minSteps, maxSteps int) int {
 			return current.cost
 		}
 
-		seen := position{loc: current.loc, steps: current.steps}
+		seen := position{loc: current.loc, direction: current.direction, steps: current.steps}
+
 		if visited.Has(seen) {
+			// fmt.Println("visited", seen)
 			continue
 		}
 		visited.Add(seen)
 
+		// fmt.Print("\033[2J\033[H")
+		// fmt.Println("step ", current.steps, " dir ", Directions[current.direction], " steps ",  " score ", current.cost, current.loc)
+
 		if left := rotateAndStep(current.position, CCW); current.steps >= minSteps && m.Valid(left.loc) {
 			_, cost, _ := m.Get(left.loc)
+			// fmt.Println("turn left", current, left)
 			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: left})
 		}
 
 		if right := rotateAndStep(current.position, CW); current.steps >= minSteps && m.Valid(right.loc) {
 			_, cost, _ := m.Get(right.loc)
+			// fmt.Println("turn right", current, right)
 			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: right})
 		}
 
 		if forward := step(current.position); current.steps < maxSteps && m.Valid(forward.loc) {
 			_, cost, _ := m.Get(forward.loc)
+			// fmt.Println("go forward", current, forward)
 			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: forward})
 		}
 	}
-
 	return -1
 }
