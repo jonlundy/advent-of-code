@@ -57,3 +57,12 @@ func (m *defaultMap[K, V]) Items() []pair[K, V] {
 	}
 	return items
 }
+
+func In[C comparable](n C, haystack ...C) bool {
+	for _, h := range haystack {
+		if n == h {
+			return true
+		}
+	}
+	return false
+}
