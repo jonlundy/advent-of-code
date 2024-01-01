@@ -13,8 +13,8 @@ import (
 //go:embed example.txt
 var example []byte
 
-//go:embed input.txt
-var input []byte
+// //go:embed input.txt
+// var input []byte
 
 func TestExample(t *testing.T) {
 	is := is.New(t)

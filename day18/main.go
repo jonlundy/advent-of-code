@@ -45,7 +45,7 @@ func run(scan *bufio.Scanner) (*result, error) {
 	}, nil
 }
 
-var OFFSET = map[string]aoc.Point{
+var OFFSET = map[string]aoc.Point[int]{
 	"R": {0, 1},
 	"D": {1, 0},
 	"L": {0, -1},
@@ -77,7 +77,7 @@ func fromColor(c string) aoc.Vector {
 }
 
 func findArea(vecs []aoc.Vector) int {
-	shoelace := []aoc.Point{{0, 0}}
+	shoelace := []aoc.Point[int]{{0, 0}}
 	borderLength := 0
 
 	for _, vec := range vecs {

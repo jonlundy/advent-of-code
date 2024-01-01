@@ -86,7 +86,7 @@ func TestPriorityQueue(t *testing.T) {
 
 	type elem [2]int
 	less := func(a, b elem) bool {
-		return b[0] < a[0]
+		return a[0] < b[0]
 	}
 
 	pq := aoc.PriorityQueue(less)
@@ -135,25 +135,12 @@ func TestSet(t *testing.T) {
 	is.Equal(items, []int{1, 2, 3, 4})
 }
 
-// func TestGraph(t *testing.T) {
-// 	g := aoc.Graph[int, uint](7)
-// 	g.AddEdge(0, 1, 2)
-// 	g.AddEdge(0, 2, 6)
-// 	g.AddEdge(1, 3, 5)
-// 	g.AddEdge(2, 3, 8)
-// 	g.AddEdge(3, 4, 10)
-// 	g.AddEdge(3, 5, 15)
-// 	g.AddEdge(4, 6, 2)
-// 	g.AddEdge(5, 6, 6)
-// 	// g.Dijkstra(0)
-// }
-
 func ExamplePriorityQueue() {
 	type memo struct {
 		pt    int
 		score int
 	}
-	less := func(a, b memo) bool { return a.score < b.score }
+	less := func(a, b memo) bool { return b.score < a.score }
 
 	adj := map[int][][2]int{
 		0: {{1, 2}, {2, 6}},

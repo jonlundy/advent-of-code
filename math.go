@@ -3,19 +3,19 @@ package aoc
 import "cmp"
 
 type uinteger interface {
-	uint | uint8 | uint16 | uint32 | uint64
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 type sinteger interface {
-	int | int8 | int16 | int32 | int64
+	~int | ~int8 | ~int16 | ~int32 | ~int64
 }
 type integer interface {
 	sinteger | uinteger
 }
 
-// type float interface {
-// 	complex64 | complex128 | float32 | float64
-// }
-// type number interface{ integer | float }
+type float interface {
+	complex64 | complex128 | float32 | float64
+}
+type number interface{ integer | float }
 
 // greatest common divisor (GCD) via Euclidean algorithm
 func GCD[T integer](a, b T) T {
@@ -46,17 +46,17 @@ func LCM[T integer](integers ...T) T {
 	return result
 }
 
-func Sum[T integer](arr ...T) T {
+func Sum[T number](arr ...T) T {
 	var acc T
 	for _, a := range arr {
 		acc += a
 	}
 	return acc
 }
-func SumFunc[T any, U integer](fn func(T) U, input ...T) U {
+func SumFunc[T any, U number](fn func(T) U, input ...T) U {
 	return Sum(SliceMap(fn, input...)...)
 }
-func SumIFunc[T any, U integer](fn func(int, T) U, input ...T) U {
+func SumIFunc[T any, U number](fn func(int, T) U, input ...T) U {
 	return Sum(SliceIMap(fn, input...)...)
 }
 
@@ -71,7 +71,7 @@ func Power2(n int) int {
 	return p
 }
 
-func ABS(i int) int {
+func ABS[I integer](i I) I {
 	if i < 0 {
 		return -i
 	}

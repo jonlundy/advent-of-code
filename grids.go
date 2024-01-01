@@ -1,23 +1,23 @@
 package aoc
 
 type Vector struct {
-	Offset Point
+	Offset Point[int]
 	Scale  int
 }
 
-func (v Vector) Point() Point {
+func (v Vector) Point() Point[int] {
 	return v.Offset.Scale(v.Scale)
 }
 
-type Point [2]int
+type Point[T integer] [2]T
 
-func (p Point) Add(a Point) Point {
-	return Point{p[0] + a[0], p[1] + a[1]}
+func (p Point[T]) Add(a Point[T]) Point[T] {
+	return Point[T]{p[0] + a[0], p[1] + a[1]}
 }
-func (p Point) Scale(m int) Point {
-	return Point{p[0] * m, p[1] * m}
+func (p Point[T]) Scale(m T) Point[T] {
+	return Point[T]{p[0] * m, p[1] * m}
 }
-func (p Point) Less(b Point) bool {
+func (p Point[T]) Less(b Point[T]) bool {
 	if p[0] != b[0] {
 		return p[0] < b[0]
 	}
@@ -41,7 +41,7 @@ func Transpose[T any](matrix [][]T) [][]T {
 }
 
 // NumPoints the number of the points inside an outline plus the number of points in the outline
-func NumPoints(outline []Point, borderLength int) int {
+func NumPoints(outline []Point[int], borderLength int) int {
 	// shoelace - find the float area in a shape
 	sum := 0
 	for _, p := range Pairwise(outline) {
@@ -56,23 +56,23 @@ func NumPoints(outline []Point, borderLength int) int {
 	return (ABS(area) - borderLength/2 + 1) + borderLength
 }
 
-type Map[T any] [][]T
+type Map[I integer, T any] [][]T
 
-func (m *Map[T]) Get(p Point) (Point, T, bool) {
+func (m *Map[I,T]) Get(p Point[I]) (Point[I], T, bool) {
 	var zero T
 	if !m.Valid(p) {
-		return [2]int{0, 0}, zero, false
+		return [2]I{0, 0}, zero, false
 	}
 
 	return p, (*m)[p[0]][p[1]], true
 }
-func (m *Map[T]) Size() (int, int) {
+func (m *Map[I,T]) Size() (I, I) {
 	if m == nil || len(*m) == 0 {
 		return 0, 0
 	}
-	return len(*m), len((*m)[0])
+	return I(len(*m)), I(len((*m)[0]))
 }
-func (m *Map[T]) Valid(p Point) bool {
+func (m *Map[I,T]) Valid(p Point[I]) bool {
 	rows, cols := m.Size()
 	return p[0] >= 0 && p[0] < rows && p[1] >= 0 && p[1] < cols
 }

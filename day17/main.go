@@ -20,7 +20,7 @@ type result struct {
 func (r result) String() string { return fmt.Sprintf("%#v", r) }
 
 func run(scan *bufio.Scanner) (*result, error) {
-	var m aoc.Map[rune]
+	var m aoc.Map[int16, rune]
 
 	for scan.Scan() {
 		text := scan.Text()
@@ -34,104 +34,146 @@ func run(scan *bufio.Scanner) (*result, error) {
 	return &result, nil
 }
 
-func search(m aoc.Map[rune], minSteps, maxSteps int) int {
-	type direction int8
-	type rotate int8
+type Point = aoc.Point[int16]
+type Map = aoc.Map[int16, rune]
 
-	const (
-		CW  rotate = 1
-		CCW rotate = -1
-	)
+// rotate for changing direction
+type rotate int8
 
-	var (
-		U = aoc.Point{-1, 0}
-		R = aoc.Point{0, 1}
-		D = aoc.Point{1, 0}
-		L = aoc.Point{0, -1}
-	)
+const (
+	CW  rotate = 1
+	CCW rotate = -1
+)
 
-	var Direction = []aoc.Point{U, R, D, L}
+// diretion of path steps
+type direction int8
 
-	var Directions = make(map[aoc.Point]direction, len(Direction))
-	for k, v := range Direction {
-		Directions[v] = direction(k)
+var (
+	U = Point{-1, 0}
+	R = Point{0, 1}
+	D = Point{1, 0}
+	L = Point{0, -1}
+)
+
+var directions = []Point{U, R, D, L}
+
+var directionIDX = func() map[Point]direction {
+	m := make(map[Point]direction, len(directions))
+	for k, v := range directions {
+		m[v] = direction(k)
+	}
+	return m
+}()
+
+// position on the map
+type position struct {
+	loc       Point
+	direction Point
+	steps     int8
+}
+
+func (p position) step() position {
+	return position{p.loc.Add(p.direction), p.direction, p.steps + 1}
+}
+func (p position) rotateAndStep(towards rotate) position {
+	d := directions[(int8(directionIDX[p.direction])+int8(towards)+4)%4]
+	return position{p.loc.Add(d), d, 1}
+}
+
+// implements FindPath graph interface
+type graph struct {
+	min, max int8
+	m        Map
+	target   Point
+	reads    int
+}
+
+// Neighbors returns valid steps from given position. if at target returns none.
+func (g *graph) Neighbors(current position) []position {
+	var nbs []position
+
+	if current.steps == 0 {
+		return []position{
+			{R, R, 1},
+			{D, D, 1},
+		}
 	}
 
+	if current.loc == g.target {
+		return nil
+	}
+
+	if left := current.rotateAndStep(CCW); current.steps >= g.min && g.m.Valid(left.loc) {
+		nbs = append(nbs, left)
+	}
+
+	if right := current.rotateAndStep(CW); current.steps >= g.min && g.m.Valid(right.loc) {
+		nbs = append(nbs, right)
+	}
+
+	if forward := current.step(); current.steps < g.max && g.m.Valid(forward.loc) {
+		nbs = append(nbs, forward)
+	}
+	return nbs
+}
+
+// Cost calculates heat cost to neighbor from map
+func (g *graph) Cost(a, b position) int16 {
+	g.reads++
+	_, r, _ := g.m.Get(b.loc)
+	return int16(r - '0')
+}
+
+// Potential calculates distance to target
+func (g *graph) Potential(a, b position) int16 {
+	return aoc.ManhattanDistance(a.loc, b.loc)
+}
+
+// Seen attempt at simplifying the seen to use horizontal/vertical and no steps.
+// It returns correct for part1 but not part 2..
+// func (g *pather) Seen(a position) position {
+// 	if a.direction == U {
+// 		a.direction = D
+// 	}
+// 	if a.direction == L {
+// 		a.direction = R
+// 	}
+// 	a.steps = 0
+// 	return a
+// }
+
+func search(m Map, minSteps, maxSteps int8) int {
 	rows, cols := m.Size()
-	target := aoc.Point{rows - 1, cols - 1}
+	start := Point{}
+	target := Point{rows - 1, cols - 1}
 
-	type position struct {
-		loc       aoc.Point
-		direction aoc.Point
-		steps     int
+	g := graph{min: minSteps, max: maxSteps, m: m, target: target}
+	cost, path := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
+
+	fmt.Println("total map reads = ", g.reads)
+	printGraph(m, path)
+
+	return int(cost)
+}
+
+// printGraph with the path overlay
+func printGraph(m Map, path []position) {
+	pts := make(map[Point]position, len(path))
+	for _, pt := range path {
+		pts[pt.loc] = pt
 	}
 
-	step := func(p position) position {
-		return position{p.loc.Add(p.direction), p.direction, p.steps + 1}
+	for r, row := range m {
+		for c := range row {
+			if _, ok := pts[Point{int16(r), int16(c)}]; ok {
+				fmt.Print("*")
+
+				continue
+			}
+
+			fmt.Print(".")
+		}
+		fmt.Println("")
 	}
-	rotateAndStep := func(p position, towards rotate) position {
-		d := Direction[(int8(Directions[p.direction])+int8(towards)+4)%4]
-		// fmt.Println(towards, Directions[p.direction], "->", Directions[d])
-		return position{p.loc.Add(d), d, 1}
-	}
-
-	type memo struct {
-		cost int
-		position
-	}
-	less := func(a, b memo) bool {
-		if a.cost != b.cost {
-			return a.cost < b.cost
-		}
-		if a.position.loc != b.position.loc {
-			return b.position.loc.Less(a.position.loc)
-		}
-		if a.position.direction != b.position.direction {
-			return b.position.direction.Less(a.position.direction)
-		}
-		return a.steps < b.steps
-	}
-
-	pq := aoc.PriorityQueue(less)
-	pq.Enqueue(memo{position: position{direction: D}})
-	pq.Enqueue(memo{position: position{direction: R}})
-	visited := aoc.Set[position]()
-
-	for !pq.IsEmpty() {
-		current, _ := pq.Dequeue()
-
-		if current.loc == target && current.steps >= minSteps {
-			return current.cost
-		}
-
-		seen := position{loc: current.loc, direction: current.direction, steps: current.steps}
-
-		if visited.Has(seen) {
-			// fmt.Println("visited", seen)
-			continue
-		}
-		visited.Add(seen)
-
-		// fmt.Print("\033[2J\033[H")
-		// fmt.Println("step ", current.steps, " dir ", Directions[current.direction], " steps ",  " score ", current.cost, current.loc)
-
-		if left := rotateAndStep(current.position, CCW); current.steps >= minSteps && m.Valid(left.loc) {
-			_, cost, _ := m.Get(left.loc)
-			// fmt.Println("turn left", current, left)
-			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: left})
-		}
-
-		if right := rotateAndStep(current.position, CW); current.steps >= minSteps && m.Valid(right.loc) {
-			_, cost, _ := m.Get(right.loc)
-			// fmt.Println("turn right", current, right)
-			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: right})
-		}
-
-		if forward := step(current.position); current.steps < maxSteps && m.Valid(forward.loc) {
-			_, cost, _ := m.Get(forward.loc)
-			// fmt.Println("go forward", current, forward)
-			pq.Enqueue(memo{cost: current.cost + int(cost-'0'), position: forward})
-		}
-	}
-	return -1
+	fmt.Println("")
 }
