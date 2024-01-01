@@ -1,44 +1,52 @@
 package aoc
 
 import (
-	"fmt"
 	"sort"
 )
 
-type priorityQueue[T any, U []T] struct {
-	elems        U
+type priorityQueue[T any] struct {
+	elems        []T
 	less         func(a, b T) bool
 	maxDepth     int
 	totalEnqueue int
+	totalDequeue int
 }
 
-func PriorityQueue[T any, U []T](less func(a, b T) bool) *priorityQueue[T, U] {
-	return &priorityQueue[T, U]{less: less}
+// PriorityQueue implements a simple slice based queue.
+// less is the function for sorting. reverse a and b to reverse the sort.
+// T is the item
+// U is a slice of T
+func PriorityQueue[T any](less func(a, b T) bool) *priorityQueue[T] {
+	return &priorityQueue[T]{less: less}
 }
-func (pq *priorityQueue[T, U]) Enqueue(elem T) {
-	pq.elems = append(pq.elems, elem)
+func (pq *priorityQueue[T]) Enqueue(elem T) {
 	pq.totalEnqueue++
+
+	pq.elems = append(pq.elems, elem)
 	pq.maxDepth = max(pq.maxDepth, len(pq.elems))
-	sort.Slice(pq.elems, func(i, j int) bool { return pq.less(pq.elems[i], pq.elems[j]) })
 }
-func (pq *priorityQueue[T, I]) IsEmpty() bool {
+func (pq *priorityQueue[T]) IsEmpty() bool {
 	return len(pq.elems) == 0
 }
-func (pq *priorityQueue[T, I]) Dequeue() (T, bool) {
+func (pq *priorityQueue[T]) Dequeue() (T, bool) {
+	pq.totalDequeue++
+
 	var elem T
 	if pq.IsEmpty() {
 		return elem, false
 	}
 
+	sort.Slice(pq.elems, func(i, j int) bool { return pq.less(pq.elems[i], pq.elems[j]) })
 	pq.elems, elem = pq.elems[:len(pq.elems)-1], pq.elems[len(pq.elems)-1]
 	return elem, true
 }
 
+// ManhattanDistance the distance between two points measured along axes at right angles.
 func ManhattanDistance[T integer](a, b Point[T]) T {
 	return ABS(a[1]-b[1]) + ABS(a[0]-b[0])
 }
 
-type pather[C number, N any] interface {
+type pather[C number, N comparable] interface {
 	Neighbors(N) []N
 	Cost(a, b N) C
 	Potential(a, b N) C
@@ -46,15 +54,20 @@ type pather[C number, N any] interface {
 	// OPTIONAL:
 	// Seen modify value used by seen pruning.
 	// Seen(N) N
+
 	// Target returns true if target reached.
 	// Target(N) bool
 }
 
-type Path[C number, N any] []N
-
-func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C, N]) {
+// FindPath uses the A* path finding algorithem.
+// g is the graph source that implements the pather interface.
+//   C is an numeric type for calculating cost/potential
+//   N is the node values. is comparable for storing in visited table for pruning.
+// start, end are nodes that dileniate the start and end of the search path.
+// The returned values are the calculated cost and the path taken from start to end.
+func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 	var zero C
-	closed := make(map[N]bool)
+	visited := make(map[N]bool)
 
 	type node struct {
 		cost      C
@@ -83,7 +96,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 	pq.Enqueue(node{position: start})
 
 	defer func() {
-		fmt.Println("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue)
+		Log("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue, "total dequeue = ", pq.totalDequeue)
 	}()
 
 	var seenFn = func(a N) N { return a }
@@ -101,10 +114,10 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 		cost, potential, n := current.cost, current.potential, current.position
 
 		seen := seenFn(n)
-		if closed[seen] {
+		if visited[seen] {
 			continue
 		}
-		closed[seen] = true
+		visited[seen] = true
 
 		if cost > 0 && potential == zero && targetFn(current.position) {
 			return cost, NewPath(&current)
@@ -112,7 +125,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 
 		for _, nb := range g.Neighbors(n) {
 			seen := seenFn(nb)
-			if closed[seen] {
+			if visited[seen] {
 				continue
 			}
 
