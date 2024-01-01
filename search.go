@@ -61,13 +61,15 @@ type pather[C number, N comparable] interface {
 
 // FindPath uses the A* path finding algorithem.
 // g is the graph source that implements the pather interface.
-//   C is an numeric type for calculating cost/potential
-//   N is the node values. is comparable for storing in visited table for pruning.
+//
+//	C is an numeric type for calculating cost/potential
+//	N is the node values. is comparable for storing in visited table for pruning.
+//
 // start, end are nodes that dileniate the start and end of the search path.
 // The returned values are the calculated cost and the path taken from start to end.
 func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 	var zero C
-	visited := make(map[N]bool)
+	closed := make(map[N]bool)
 
 	type node struct {
 		cost      C
@@ -94,6 +96,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 
 	pq := PriorityQueue(less)
 	pq.Enqueue(node{position: start})
+	closed[start] = false
 
 	defer func() {
 		Log("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue, "total dequeue = ", pq.totalDequeue)
@@ -114,10 +117,10 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 		cost, potential, n := current.cost, current.potential, current.position
 
 		seen := seenFn(n)
-		if visited[seen] {
+		if closed[seen] {
 			continue
 		}
-		visited[seen] = true
+		closed[seen] = true
 
 		if cost > 0 && potential == zero && targetFn(current.position) {
 			return cost, NewPath(&current)
@@ -125,7 +128,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 
 		for _, nb := range g.Neighbors(n) {
 			seen := seenFn(nb)
-			if visited[seen] {
+			if closed[seen] {
 				continue
 			}
 
@@ -136,7 +139,11 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 				cost:      cost,
 				potential: g.Potential(nb, end),
 			}
-			pq.Enqueue(nextPath)
+			// check if path is in open list
+			if _, open := closed[seen]; !open {
+				pq.Enqueue(nextPath)
+				closed[seen] = false // add to open list
+			}
 		}
 	}
 	return zero, nil
