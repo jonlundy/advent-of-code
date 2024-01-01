@@ -129,9 +129,16 @@ func (g *graph) Potential(a, b position) int16 {
 	return aoc.ManhattanDistance(a.loc, b.loc)
 }
 
+func (g *graph) Target(a position) bool {
+	if a.loc == g.target && a.steps >= g.min {
+		return true
+	}
+	return false
+}
+
 // Seen attempt at simplifying the seen to use horizontal/vertical and no steps.
 // It returns correct for part1 but not part 2..
-// func (g *pather) Seen(a position) position {
+// func (g *graph) Seen(a position) position {
 // 	if a.direction == U {
 // 		a.direction = D
 // 	}

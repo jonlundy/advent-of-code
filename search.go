@@ -43,8 +43,11 @@ type pather[C number, N any] interface {
 	Cost(a, b N) C
 	Potential(a, b N) C
 
-	// OPTIONAL: modify value used by seen pruning.
+	// OPTIONAL:
+	// Seen modify value used by seen pruning.
 	// Seen(N) N
+	// Target returns true if target reached.
+	// Target(N) bool
 }
 
 type Path[C number, N any] []N
@@ -57,16 +60,16 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 		cost      C
 		potential C
 		parent    *node
-		last      N
+		position  N
 	}
 
 	NewPath := func(n *node) []N {
 		var path []N
 		for n.parent != nil {
-			path = append(path, n.last)
+			path = append(path, n.position)
 			n = n.parent
 		}
-		path = append(path, n.last)
+		path = append(path, n.position)
 
 		Reverse(path)
 		return path
@@ -77,7 +80,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 	}
 
 	pq := PriorityQueue(less)
-	pq.Enqueue(node{last: start})
+	pq.Enqueue(node{position: start})
 
 	defer func() {
 		fmt.Println("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue)
@@ -88,9 +91,14 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 		seenFn = s.Seen
 	}
 
+	var targetFn = func(a N) bool { return true }
+	if s, ok := g.(interface{ Target(N) bool }); ok {
+		targetFn = s.Target
+	}
+
 	for !pq.IsEmpty() {
 		current, _ := pq.Dequeue()
-		cost, potential, n := current.cost, current.potential, current.last
+		cost, potential, n := current.cost, current.potential, current.position
 
 		seen := seenFn(n)
 		if closed[seen] {
@@ -98,7 +106,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 		}
 		closed[seen] = true
 
-		if cost > 0 && potential == zero {
+		if cost > 0 && potential == zero && targetFn(current.position) {
 			return cost, NewPath(&current)
 		}
 
@@ -110,7 +118,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, Path[C,
 
 			cost := g.Cost(n, nb) + current.cost
 			nextPath := node{
-				last:      nb,
+				position:  nb,
 				parent:    &current,
 				cost:      cost,
 				potential: g.Potential(nb, end),
