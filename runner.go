@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func Runner[R any, F func(*bufio.Scanner) (R, error)](run F) (R, error) {
@@ -33,7 +34,10 @@ func MustResult[T any](result T, err error) {
 	Log("result", result)
 }
 
-func Log(v ...any) { fmt.Fprintln(os.Stderr, v...) }
+func Log(v ...any) {
+	fmt.Fprint(os.Stderr, time.Now(), ": ")
+	fmt.Fprintln(os.Stderr, v...)
+}
 func Logf(format string, v ...any) {
 	if !strings.HasSuffix(format, "\n") {
 		format += "\n"

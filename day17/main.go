@@ -8,7 +8,7 @@ import (
 	aoc "go.sour.is/advent-of-code"
 )
 
-// var log = aoc.Log
+var log = aoc.Log
 
 func main() { aoc.MustResult(aoc.Runner(run)) }
 
@@ -26,10 +26,14 @@ func run(scan *bufio.Scanner) (*result, error) {
 		text := scan.Text()
 		m = append(m, []rune(text))
 	}
+	log("start day 17")
 
 	result := result{}
 	result.valuePT1 = search(m, 1, 3)
+	log("result from part 1 = ", result.valuePT1)
+
 	result.valuePT2 = search(m, 4, 10)
+	log("result from part 2 = ", result.valuePT2)
 
 	return &result, nil
 }
@@ -157,7 +161,7 @@ func search(m Map, minSteps, maxSteps int8) int {
 	g := graph{min: minSteps, max: maxSteps, m: m, target: target}
 	cost, path := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
 
-	fmt.Println("total map reads = ", g.reads)
+	log("total map reads = ", g.reads)
 	printGraph(m, path)
 
 	return int(cost)
