@@ -15,7 +15,7 @@ func main() { aoc.MustResult(aoc.Runner(run)) }
 
 type result struct {
 	valuePT1 int
-	valuePT2 int
+	valuePT2 uint
 }
 
 func (r result) String() string { return fmt.Sprintf("%#v", r) }
@@ -44,6 +44,7 @@ func run(scan *bufio.Scanner) (*result, error) {
 
 	var result result
 	result.valuePT1 = solveWorkflow(parts, workflows)
+	result.valuePT2 = solveRanges(workflows)
 
 	return &result, nil
 }
@@ -143,7 +144,7 @@ func (r rule) Match(p part) bool {
 }
 
 func solveWorkflow(parts []part, workflows map[string][]rule) int {
-	var rejected []part
+	// var rejected []part
 	var accepted []part
 
 	for _, p := range parts {
@@ -163,7 +164,7 @@ func solveWorkflow(parts []part, workflows map[string][]rule) int {
 					break nextStep
 				}
 				if workflow == "R" {
-					rejected = append(rejected, p)
+					// rejected = append(rejected, p)
 					workflow = ""
 					break nextStep
 				}
@@ -172,9 +173,6 @@ func solveWorkflow(parts []part, workflows map[string][]rule) int {
 			}
 		}
 	}
-
-	fmt.Println("accepted", accepted)
-	fmt.Println("rejected", rejected)
 
 	sum := 0
 	for _, p := range accepted {
@@ -186,70 +184,72 @@ func solveWorkflow(parts []part, workflows map[string][]rule) int {
 	return sum
 }
 
-/*
-in{s<1351:px, s>=1351:qqz}
+func solveRanges(workflows map[string][]rule) uint {
 
---> px{a<2006&&(x<1416||x>2662):A, a<2006&&x>=1416&&x<=2662:R, m>2090:A, a>=2006&&m<=2090&&s<537:R||x>2440:R, a>=2006&&m<=2090&&s<537&x<=2440:A}
+	pq := aoc.PriorityQueue(func(a, b queue) bool { return false })
+	pq.Enqueue(queue{
+		"in",
+		block{
+			ranger{1, 4000},
+			ranger{1, 4000},
+			ranger{1, 4000},
+			ranger{1, 4000},
+		}})
 
---> qqz{s>2770:A, m<1801&&m>838:A, m<1801&&a>1716:R, m<1801&&a<=1716:A, s<=2770&&m>=1801:R}
+	var accepted []block
+	// var rejected []block
 
+	for !pq.IsEmpty() {
+		current, _ := pq.Dequeue()
+		for _, rule := range workflows[current.name] {
+			next := queue{name: rule.queue, block: current.block}
 
+			switch rule.match {
+			case "x":
+				current.x, next.x = split(current.x, rule.value, rule.op == ">")
+			case "m":
+				current.m, next.m = split(current.m, rule.value, rule.op == ">")
+			case "a":
+				current.a, next.a = split(current.a, rule.value, rule.op == ">")
+			case "s":
+				current.s, next.s = split(current.s, rule.value, rule.op == ">")
+			}
 
+			switch next.name {
+			case "R":
+				// rejected = append(rejected, next.block)
 
+			case "A":
+				accepted = append(accepted, next.block)
 
+			default:
+				pq.Enqueue(next)
+			}
+		}
+	}
 
+	var sum uint
+	for _, a := range accepted {
+		sum += uint((a.x[1]-a.x[0]+1) * (a.m[1]-a.m[0]+1) * (a.a[1]-a.a[0]+1) * (a.s[1]-a.s[0]+1))
+	}
 
-in [/]
---
-s<1351 -> px
-s>=1351 -> qqz
+	return sum
+}
 
-px [/]
---
-s<1351 -> px
+type ranger [2]int
+type block struct {
+	x, m, a, s ranger
+}
+type queue struct {
+	name string
+	block
+}
 
-a< 2006  -> qkq
-m> 2090  -> A
-a>=2006 -> ...
-m<=2090 -> rfg
+func split(a ranger, n int, gt bool) (current ranger, next ranger) {
+	if gt { // x > N => [0,N] [N++,inf]
+		return ranger{a[0], n}, ranger{n + 1, a[1]}
+	}
 
-qqz [ ]
---
-s>=1351 -> qqz
-
-s> 2770 -> qs
-m< 1801 -> hdj
- -> R
-
-qkq [ ]
---
-s< 1351 ->
-a< 2006 ->
-
-x< 1416 -> A
-x>=1416 -> crn
-
-rfg [ ]
---
-s< 1351 -> px
-a>=2006 ->...
-m<=2090 -> rfg
-
-s<  537 -> gd
-x> 2440 -> R
-s>= 537 ->...
-x<=2440 -> A
-
-crn [ ]
---
-s< 1351 -> px
-a< 2006 -> qkq
-x>=1416 -> crn
-
-x> 2662 -> A
-x<=2662 -> R
-
-A
---
-
-*/
+	// x < N => [N,inf] [0,N--]
+	return ranger{n, a[1]}, ranger{a[0], n - 1}
+}
