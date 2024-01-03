@@ -1,7 +1,6 @@
 package aoc
 
 import (
-	"maps"
 	"sort"
 )
 
@@ -74,9 +73,11 @@ func ManhattanDistance[T integer](a, b Point[T]) T {
 type pather[C number, N comparable] interface {
 	Neighbors(N) []N
 	Cost(a, b N) C
-	Potential(a, b N) C
 
 	// OPTIONAL:
+	// Add heuristic for running as A* search.
+	// Potential(a, b N) C
+
 	// Seen modify value used by seen pruning.
 	// Seen(N) N
 
@@ -137,6 +138,11 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 		targetFn = s.Target
 	}
 
+	var potentialFn = func(a, b N) C { var zero C; return zero }
+	if s, ok := g.(interface{ Potential(a, b N) C }); ok {
+		potentialFn = s.Potential
+	}
+
 	for !pq.IsEmpty() {
 		current, _ := pq.Dequeue()
 		cost, potential, n := current.cost, current.potential, current.position
@@ -162,7 +168,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 				position:  nb,
 				parent:    &current,
 				cost:      cost,
-				potential: g.Potential(nb, end),
+				potential: potentialFn(nb, end),
 			}
 			// check if path is in open list
 			if _, open := closed[seen]; !open {
@@ -172,101 +178,4 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 		}
 	}
 	return zero, nil
-}
-
-// FindPath uses the A* path finding algorithem.
-// g is the graph source that implements the pather interface.
-//
-//	C is an numeric type for calculating cost/potential
-//	N is the node values. is comparable for storing in visited table for pruning.
-//
-// start, end are nodes that dileniate the start and end of the search path.
-// The returned values are the calculated cost and the path taken from start to end.
-func FindPaths[C integer, N comparable](g pather[C, N], start, end N) ([]C, [][]N) {
-	var zero C
-	// closed := make(map[N]bool)
-
-	type node struct {
-		cost      C
-		potential C
-		parent    *node
-		position  N
-		closed    map[N]bool
-	}
-
-	NewPath := func(n *node) []N {
-		var path []N
-		for n.parent != nil {
-			path = append(path, n.position)
-			n = n.parent
-		}
-		path = append(path, n.position)
-
-		Reverse(path)
-		return path
-	}
-
-	less := func(b, a node) bool {
-		return b.cost+b.potential < a.cost+a.potential
-	}
-
-	pq := PriorityQueue(less)
-	pq.Enqueue(node{position: start, closed: make(map[N]bool)})
-
-	defer func() {
-		Log("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue, "total dequeue = ", pq.totalDequeue)
-	}()
-
-	var seenFn = func(a N) N { return a }
-	if s, ok := g.(interface{ Seen(N) N }); ok {
-		seenFn = s.Seen
-	}
-
-	var targetFn = func(a N) bool { return true }
-	if s, ok := g.(interface{ Target(N) bool }); ok {
-		targetFn = s.Target
-	}
-
-	var paths [][]N
-	var costs []C
-
-	for !pq.IsEmpty() {
-		current, _ := pq.Dequeue()
-		cost, potential, n := current.cost, current.potential, current.position
-
-		seen := seenFn(n)
-		if current.closed[seen] {
-			continue
-		}
-		current.closed[seen] = true
-
-		if cost > 0 && potential == zero && cost > Max(0, costs...) && targetFn(current.position) {
-			paths = append([][]N(nil), NewPath(&current))
-			costs = append([]C(nil), cost)
-			Log("new record = ", cost)
-			continue
-		}
-
-		for _, nb := range g.Neighbors(n) {
-			seen := seenFn(nb)
-			if current.closed[seen] {
-				continue
-			}
-
-			cost := g.Cost(n, nb) + current.cost
-			next := node{
-				position:  nb,
-				parent:    &current,
-				cost:      cost,
-				potential: g.Potential(nb, end),
-				closed:    maps.Clone(current.closed),
-			}
-			// check if path is in open list
-			if _, open := current.closed[seen]; !open {
-				next.closed[seen] = false // add to open list
-				pq.Enqueue(next)
-			}
-		}
-	}
-	return costs, paths
 }

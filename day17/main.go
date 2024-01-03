@@ -29,10 +29,10 @@ func run(scan *bufio.Scanner) (*result, error) {
 	log("start day 17")
 
 	result := result{}
-	result.valuePT1 = search(m, 1, 3)
+	result.valuePT1 = search(m, 1, 3, seenFn)
 	log("result from part 1 = ", result.valuePT1)
 
-	result.valuePT2 = search(m, 4, 10)
+	result.valuePT2 = search(m, 4, 10, nil)
 	log("result from part 2 = ", result.valuePT2)
 
 	return &result, nil
@@ -90,6 +90,7 @@ type graph struct {
 	m        Map
 	target   Point
 	reads    int
+	seenFn   func(a position) position
 }
 
 // Neighbors returns valid steps from given position. if at target returns none.
@@ -129,9 +130,9 @@ func (g *graph) Cost(a, b position) int16 {
 }
 
 // Potential calculates distance to target
-func (g *graph) Potential(a, b position) int16 {
-	return aoc.ManhattanDistance(a.loc, b.loc)
-}
+// func (g *graph) Potential(a, b position) int16 {
+// 	return aoc.ManhattanDistance(a.loc, b.loc)
+// }
 
 func (g *graph) Target(a position) bool {
 	if a.loc == g.target && a.steps >= g.min {
@@ -143,22 +144,29 @@ func (g *graph) Target(a position) bool {
 // Seen attempt at simplifying the seen to use horizontal/vertical and no steps.
 // It returns correct for part1 but not part 2..
 // func (g *graph) Seen(a position) position {
-// 	if a.direction == U {
-// 		a.direction = D
+// 	if g.seenFn != nil {
+// 		return g.seenFn(a)
 // 	}
-// 	if a.direction == L {
-// 		a.direction = R
-// 	}
-// 	a.steps = 0
 // 	return a
 // }
 
-func search(m Map, minSteps, maxSteps int8) int {
+func seenFn(a position) position {
+	if a.direction == U {
+		a.direction = D
+	}
+	if a.direction == L {
+		a.direction = R
+	}
+	a.steps = 0
+	return a
+}
+
+func search(m Map, minSteps, maxSteps int8, seenFn func(position) position) int {
 	rows, cols := m.Size()
 	start := Point{}
 	target := Point{rows - 1, cols - 1}
 
-	g := graph{min: minSteps, max: maxSteps, m: m, target: target}
+	g := graph{min: minSteps, max: maxSteps, m: m, target: target, seenFn: seenFn}
 	cost, path := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
 
 	log("total map reads = ", g.reads)
