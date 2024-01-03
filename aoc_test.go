@@ -195,3 +195,42 @@ func ExamplePriorityQueue() {
 	// point 5 is 22 steps away.
 	// point 6 is 19 steps away.
 }
+
+func TestStack(t *testing.T) {
+	is := is.New(t)
+
+	s := aoc.Stack(1,2,3,4)
+	is.True(!s.IsEmpty())
+	is.Equal(s.Pop(), 4)
+	is.Equal(s.Pop(), 3)
+	is.Equal(s.Pop(), 2)
+	is.Equal(s.Pop(), 1)
+	is.True(s.IsEmpty())
+	s.Push(4,3,2,1)
+	is.True(!s.IsEmpty())
+	is.Equal(s.Pop(), 1)
+	is.Equal(s.Pop(), 2)
+	is.Equal(s.Pop(), 3)
+	is.Equal(s.Pop(), 4)
+	is.True(s.IsEmpty())
+}
+
+func TestGraph(t *testing.T) {
+	is := is.New(t)
+
+	var adjacencyList = map[int][]int{
+		2: {3, 5, 1},
+		1: {2, 4},
+		3: {6, 2},
+		4: {1, 5, 7},
+		5: {2, 6, 8, 4},
+		6: {3, 0, 9, 5},
+		7: {4, 8},
+		8: {5, 9, 7},
+		9: {6, 0, 8},
+	}
+
+	g := aoc.Graph(aoc.WithAdjacencyList[int,int](adjacencyList))
+	is.Equal(g.Neighbors(1), []int{2,4})
+	is.Equal(map[int][]int(g.AdjacencyList()), adjacencyList)
+}
