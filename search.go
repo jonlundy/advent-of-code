@@ -67,22 +67,26 @@ func (s *stack[T]) Pop() T {
 
 // ManhattanDistance the distance between two points measured along axes at right angles.
 func ManhattanDistance[T integer](a, b Point[T]) T {
-	return ABS(a[1]-b[1]) + ABS(a[0]-b[0])
+	return ABS(a[0]-b[0]) + ABS(a[1]-b[1])
 }
 
 type pather[C number, N comparable] interface {
+	// Neighbors returns all neighbors to node N that should be considered next.
 	Neighbors(N) []N
+
+	// Cost returns 
 	Cost(a, b N) C
+
+	// Target returns true when target reached. receives node and cost.
+	Target(N, C) bool
 
 	// OPTIONAL:
 	// Add heuristic for running as A* search.
-	// Potential(a, b N) C
+	// Potential(N) C
 
 	// Seen modify value used by seen pruning.
 	// Seen(N) N
 
-	// Target returns true if target reached.
-	// Target(N) bool
 }
 
 // FindPath uses the A* path finding algorithem.
@@ -93,9 +97,18 @@ type pather[C number, N comparable] interface {
 //
 // start, end are nodes that dileniate the start and end of the search path.
 // The returned values are the calculated cost and the path taken from start to end.
-func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
+func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N, map[N]C) {
 	var zero C
-	closed := make(map[N]bool)
+
+	var seenFn = func(a N) N { return a }
+	if s, ok := g.(interface{ Seen(N) N }); ok {
+		seenFn = s.Seen
+	}
+
+	var potentialFn = func(N) C { var zero C; return zero }
+	if p, ok := g.(interface{ Potential(N) C }); ok {
+		potentialFn = p.Potential
+	}
 
 	type node struct {
 		cost      C
@@ -104,7 +117,7 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 		position  N
 	}
 
-	NewPath := func(n *node) []N {
+	newPath := func(n *node) []N {
 		var path []N
 		for n.parent != nil {
 			path = append(path, n.position)
@@ -117,65 +130,45 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N) {
 	}
 
 	less := func(a, b node) bool {
-		return b.cost+b.potential < a.cost+a.potential
+		return  b.cost+b.potential < a.cost+a.potential
 	}
 
-	pq := PriorityQueue(less)
-	pq.Enqueue(node{position: start})
-	closed[start] = false
+	closed := make(map[N]C)
+	open := PriorityQueue(less)
 
-	defer func() {
-		Log("queue max depth = ", pq.maxDepth, "total enqueue = ", pq.totalEnqueue, "total dequeue = ", pq.totalDequeue)
-	}()
+	open.Enqueue(node{position: start, potential: potentialFn(start)})
+	closed[start] = zero
 
-	var seenFn = func(a N) N { return a }
-	if s, ok := g.(interface{ Seen(N) N }); ok {
-		seenFn = s.Seen
-	}
+	// defer func() {
+	// 	Log(
+	// 		"queue max depth = ", open.maxDepth, 
+	// 		"total enqueue = ", open.totalEnqueue, 
+	// 		"total dequeue = ", open.totalDequeue,
+	// 		"total closed = ", len(closed),
+	// 	)
+	// }()
 
-	var targetFn = func(a N) bool { return true }
-	if s, ok := g.(interface{ Target(N) bool }); ok {
-		targetFn = s.Target
-	}
-
-	var potentialFn = func(a, b N) C { var zero C; return zero }
-	if s, ok := g.(interface{ Potential(a, b N) C }); ok {
-		potentialFn = s.Potential
-	}
-
-	for !pq.IsEmpty() {
-		current, _ := pq.Dequeue()
-		cost, potential, n := current.cost, current.potential, current.position
-
-		seen := seenFn(n)
-		if closed[seen] {
-			continue
-		}
-		closed[seen] = true
-
-		if cost > 0 && potential == zero && targetFn(current.position) {
-			return cost, NewPath(&current)
-		}
-
-		for _, nb := range g.Neighbors(n) {
-			seen := seenFn(nb)
-			if closed[seen] {
-				continue
-			}
-
-			cost := g.Cost(n, nb) + current.cost
-			nextPath := node{
+	for !open.IsEmpty() {
+		current, _ := open.Dequeue()
+		for _, nb := range g.Neighbors(current.position) {
+			next := node{
 				position:  nb,
 				parent:    &current,
-				cost:      cost,
-				potential: potentialFn(nb, end),
+				cost:      g.Cost(current.position, nb) + current.cost,
+				potential: potentialFn(nb),
 			}
-			// check if path is in open list
-			if _, open := closed[seen]; !open {
-				pq.Enqueue(nextPath)
-				closed[seen] = false // add to open list
+
+			seen := seenFn(nb)
+			cost, ok := closed[seen]
+			if !ok || next.cost < cost {
+				open.Enqueue(next)
+				closed[seen] = next.cost
+			}	
+
+			if next.potential == zero && g.Target(next.position, next.cost) {
+				return next.cost, newPath(&next), closed
 			}
 		}
 	}
-	return zero, nil
+	return zero, nil, closed
 }

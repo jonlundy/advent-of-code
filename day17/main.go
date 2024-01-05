@@ -119,6 +119,7 @@ func (g *graph) Neighbors(current position) []position {
 	if forward := current.step(); current.steps < g.max && g.m.Valid(forward.loc) {
 		nbs = append(nbs, forward)
 	}
+
 	return nbs
 }
 
@@ -130,12 +131,13 @@ func (g *graph) Cost(a, b position) int16 {
 }
 
 // Potential calculates distance to target
-// func (g *graph) Potential(a, b position) int16 {
-// 	return aoc.ManhattanDistance(a.loc, b.loc)
-// }
+func (g *graph) Potential(a position) int16 {
+	return aoc.ManhattanDistance(a.loc, g.target)
+}
 
-func (g *graph) Target(a position) bool {
-	if a.loc == g.target && a.steps >= g.min {
+// Target returns true when target reached. receives node and cost.
+func (g *graph) Target(a position, c int16) bool {
+	if a.loc == g.target && a.steps >= g.min && a.steps <= g.max {
 		return true
 	}
 	return false
@@ -143,12 +145,12 @@ func (g *graph) Target(a position) bool {
 
 // Seen attempt at simplifying the seen to use horizontal/vertical and no steps.
 // It returns correct for part1 but not part 2..
-// func (g *graph) Seen(a position) position {
-// 	if g.seenFn != nil {
-// 		return g.seenFn(a)
-// 	}
-// 	return a
-// }
+func (g *graph) Seen(a position) position {
+	if g.seenFn != nil {
+		return g.seenFn(a)
+	}
+	return a
+}
 
 func seenFn(a position) position {
 	if a.direction == U {
@@ -157,7 +159,7 @@ func seenFn(a position) position {
 	if a.direction == L {
 		a.direction = R
 	}
-	a.steps = 0
+	// a.steps = 0
 	return a
 }
 
@@ -167,30 +169,51 @@ func search(m Map, minSteps, maxSteps int8, seenFn func(position) position) int 
 	target := Point{rows - 1, cols - 1}
 
 	g := graph{min: minSteps, max: maxSteps, m: m, target: target, seenFn: seenFn}
-	cost, path := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
+	cost, path, closed := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
 
-	log("total map reads = ", g.reads)
-	printGraph(m, path)
+	log("total map reads = ", g.reads, "cost = ", cost)
+	printGraph(m, path, closed, g.seenFn)
 
 	return int(cost)
 }
 
-// printGraph with the path overlay
-func printGraph(m Map, path []position) {
+// printGraph with the path/cost overlay
+func printGraph(m Map, path []position, closed map[position]int16, seenFn func(a position) position) {
 	pts := make(map[Point]position, len(path))
 	for _, pt := range path {
 		pts[pt.loc] = pt
 	}
 
+	clpt := make(map[position]position, len(closed))
+	for pt := range closed {
+		clpt[position{loc: pt.loc, steps: pt.steps}] = pt
+	}
+
 	for r, row := range m {
+		if r == 0 {
+			for c := range row {
+				if c == 0 {
+					fmt.Print("     ")
+				}
+				fmt.Printf("% 5d", c)
+			}
+			fmt.Println("")
+		}
 		for c := range row {
-			if _, ok := pts[Point{int16(r), int16(c)}]; ok {
-				fmt.Print("*")
+			if c == 0 {
+				fmt.Printf("% 5d", r)
+			}
+
+			if pt, ok := pts[Point{int16(r), int16(c)}]; ok {
+				if seenFn != nil {
+					pt = seenFn(pt)
+				}
+				fmt.Printf("% 5d", closed[pt])
 
 				continue
 			}
 
-			fmt.Print(".")
+			fmt.Print(" ....")
 		}
 		fmt.Println("")
 	}

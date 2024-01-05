@@ -28,14 +28,14 @@ func TestExample(t *testing.T) {
 	is.Equal(result.valuePT2, 94)
 }
 
-// func TestSolution(t *testing.T) {
-// 	is := is.New(t)
-// 	scan := bufio.NewScanner(bytes.NewReader(input))
+func TestSolution(t *testing.T) {
+	is := is.New(t)
+	scan := bufio.NewScanner(bytes.NewReader(input))
 
-// 	result, err := run(scan)
-// 	is.NoErr(err)
+	result, err := run(scan)
+	is.NoErr(err)
 
-// 	t.Log(result)
-// 	is.Equal(result.valuePT1, 843)
-// 	is.Equal(result.valuePT2, 1017)
-// }
+	t.Log(result)
+	is.Equal(result.valuePT1, 843)
+	is.Equal(result.valuePT2, 1017)
+}
