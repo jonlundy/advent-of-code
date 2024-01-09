@@ -1,12 +1,13 @@
 package aoc
 
 import (
+	"math/bits"
 	"sort"
 )
 
 type priorityQueue[T any] struct {
-	elems        []T
-	less         func(a, b T) bool
+	elems        []*T
+	less         func(a, b *T) bool
 	maxDepth     int
 	totalEnqueue int
 	totalDequeue int
@@ -16,10 +17,10 @@ type priorityQueue[T any] struct {
 // less is the function for sorting. reverse a and b to reverse the sort.
 // T is the item
 // U is a slice of T
-func PriorityQueue[T any](less func(a, b T) bool) *priorityQueue[T] {
+func PriorityQueue[T any](less func(a, b *T) bool) *priorityQueue[T] {
 	return &priorityQueue[T]{less: less}
 }
-func (pq *priorityQueue[T]) Enqueue(elem T) {
+func (pq *priorityQueue[T]) Insert(elem *T) {
 	pq.totalEnqueue++
 
 	pq.elems = append(pq.elems, elem)
@@ -28,17 +29,17 @@ func (pq *priorityQueue[T]) Enqueue(elem T) {
 func (pq *priorityQueue[T]) IsEmpty() bool {
 	return len(pq.elems) == 0
 }
-func (pq *priorityQueue[T]) Dequeue() (T, bool) {
+func (pq *priorityQueue[T]) ExtractMin() *T {
 	pq.totalDequeue++
 
-	var elem T
+	var elem *T
 	if pq.IsEmpty() {
-		return elem, false
+		return elem
 	}
 
-	sort.Slice(pq.elems, func(i, j int) bool { return pq.less(pq.elems[i], pq.elems[j]) })
+	sort.Slice(pq.elems, func(i, j int) bool { return pq.less(pq.elems[j], pq.elems[i]) })
 	pq.elems, elem = pq.elems[:len(pq.elems)-1], pq.elems[len(pq.elems)-1]
-	return elem, true
+	return elem
 }
 
 type stack[T any] []T
@@ -74,7 +75,7 @@ type pather[C number, N comparable] interface {
 	// Neighbors returns all neighbors to node N that should be considered next.
 	Neighbors(N) []N
 
-	// Cost returns 
+	// Cost returns
 	Cost(a, b N) C
 
 	// Target returns true when target reached. receives node and cost.
@@ -129,31 +130,22 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N, ma
 		return path
 	}
 
-	less := func(a, b node) bool {
-		return  b.cost+b.potential < a.cost+a.potential
+	less := func(a, b *node) bool {
+		return a.cost+a.potential < b.cost+b.potential
 	}
 
 	closed := make(map[N]C)
-	open := PriorityQueue(less)
+	open := FibHeap(less)
 
-	open.Enqueue(node{position: start, potential: potentialFn(start)})
+	open.Insert(&node{position: start, potential: potentialFn(start)})
 	closed[start] = zero
 
-	// defer func() {
-	// 	Log(
-	// 		"queue max depth = ", open.maxDepth, 
-	// 		"total enqueue = ", open.totalEnqueue, 
-	// 		"total dequeue = ", open.totalDequeue,
-	// 		"total closed = ", len(closed),
-	// 	)
-	// }()
-
 	for !open.IsEmpty() {
-		current, _ := open.Dequeue()
+		current := open.ExtractMin()
 		for _, nb := range g.Neighbors(current.position) {
-			next := node{
+			next := &node{
 				position:  nb,
-				parent:    &current,
+				parent:    current,
 				cost:      g.Cost(current.position, nb) + current.cost,
 				potential: potentialFn(nb),
 			}
@@ -161,14 +153,120 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N, ma
 			seen := seenFn(nb)
 			cost, ok := closed[seen]
 			if !ok || next.cost < cost {
-				open.Enqueue(next)
+				open.Insert(next)
 				closed[seen] = next.cost
-			}	
+			}
 
 			if next.potential == zero && g.Target(next.position, next.cost) {
-				return next.cost, newPath(&next), closed
+				return next.cost, newPath(next), closed
 			}
 		}
 	}
 	return zero, nil, closed
 }
+
+type fibTree[T any] struct {
+	value *T
+	parent *fibTree[T]
+	child []*fibTree[T]
+}
+
+func (t *fibTree[T]) addAtEnd(n *fibTree[T]) {
+	n.parent = t
+	t.child = append(t.child, n)
+}
+
+type fibHeap[T any] struct {
+	trees []*fibTree[T]
+	least *fibTree[T]
+	count uint
+	less  func(a, b *T) bool
+}
+
+func FibHeap[T any](less func(a, b *T) bool) *fibHeap[T] {
+	return &fibHeap[T]{less: less}
+}
+
+func (h *fibHeap[T]) GetMin() *T {
+	return h.least.value
+}
+
+func (h *fibHeap[T]) IsEmpty() bool { return h.least == nil }
+
+func (h *fibHeap[T]) Insert(v *T) {
+	ntree := &fibTree[T]{value: v}
+	h.trees = append(h.trees, ntree)
+	if h.least == nil || h.less(v, h.least.value) {
+		h.least = ntree
+	}
+	h.count++
+}
+
+func (h *fibHeap[T]) ExtractMin() *T {
+	smallest := h.least
+	if smallest != nil {
+		// Remove smallest from root trees.
+		for i := range h.trees {
+			pos := h.trees[i]
+			if pos == smallest {
+				h.trees[i] = h.trees[len(h.trees)-1]
+				h.trees = h.trees[:len(h.trees)-1]
+				break
+			}
+		}
+
+		// Add children to root
+		h.trees = append(h.trees, smallest.child...)
+		smallest.child = smallest.child[:0]
+
+		h.least = nil
+		if len(h.trees) > 0 {
+			h.consolidate()
+		}
+
+		h.count--
+		return smallest.value
+	}
+	return nil
+}
+
+func (h *fibHeap[T]) consolidate() {
+	aux := make([]*fibTree[T], bits.Len(h.count))
+	for _, x := range h.trees {
+		order := len(x.child)
+
+		// consolidate the larger roots under smaller roots of same order until we have at most one tree per order.
+		for aux[order] != nil {
+			y := aux[order]
+			if h.less(y.value, x.value) {
+				x, y = y, x
+			}
+			x.addAtEnd(y)
+			aux[order] = nil
+			order++
+		}
+		aux[order] = x
+	}
+
+	h.trees = h.trees[:0]
+	// move ordered trees to root and find least node.
+	for _, k := range aux {
+		if k != nil {
+			k.parent = nil
+			h.trees = append(h.trees, k)
+			if h.least == nil || h.less(k.value, h.least.value) {
+				h.least = k
+			}
+		}
+	}
+}
+
+func (h *fibHeap[T]) Merge(a *fibHeap[T]) {
+	h.trees = append(h.trees, a.trees...)
+	h.count += a.count
+	h.consolidate()
+}
+
+// func (h *fibHeap[T]) Find(n *T) *fibTree[T] {
+	
+// }

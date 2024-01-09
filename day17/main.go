@@ -131,9 +131,9 @@ func (g *graph) Cost(a, b position) int16 {
 }
 
 // Potential calculates distance to target
-func (g *graph) Potential(a position) int16 {
-	return aoc.ManhattanDistance(a.loc, g.target)
-}
+// func (g *graph) Potential(a position) int16 {
+// 	return aoc.ManhattanDistance(a.loc, g.target)
+// }
 
 // Target returns true when target reached. receives node and cost.
 func (g *graph) Target(a position, c int16) bool {
@@ -169,6 +169,7 @@ func search(m Map, minSteps, maxSteps int8, seenFn func(position) position) int 
 	target := Point{rows - 1, cols - 1}
 
 	g := graph{min: minSteps, max: maxSteps, m: m, target: target, seenFn: seenFn}
+
 	cost, path, closed := aoc.FindPath[int16, position](&g, position{loc: start}, position{loc: target})
 
 	log("total map reads = ", g.reads, "cost = ", cost)
@@ -190,30 +191,33 @@ func printGraph(m Map, path []position, closed map[position]int16, seenFn func(a
 	}
 
 	for r, row := range m {
-		if r == 0 {
-			for c := range row {
-				if c == 0 {
-					fmt.Print("     ")
-				}
-				fmt.Printf("% 5d", c)
-			}
-			fmt.Println("")
-		}
+		// if r == 0 {
+		// 	for c := range row {
+		// 		if c == 0 {
+		// 			fmt.Print("     ")
+		// 		}
+		// 		fmt.Printf("% 5d", c)
+		// 	}
+		// 	fmt.Println("")
+		// }
 		for c := range row {
-			if c == 0 {
-				fmt.Printf("% 5d", r)
-			}
+			// if c == 0 {
+			// 	fmt.Printf("% 5d", r)
+			// }
 
 			if pt, ok := pts[Point{int16(r), int16(c)}]; ok {
 				if seenFn != nil {
 					pt = seenFn(pt)
 				}
-				fmt.Printf("% 5d", closed[pt])
+				_ = pt
+				// fmt.Printf("% 5d", closed[pt])
+				fmt.Print("*")
 
 				continue
 			}
 
-			fmt.Print(" ....")
+			// fmt.Print(" ....")
+			fmt.Print(" ")
 		}
 		fmt.Println("")
 	}

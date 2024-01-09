@@ -186,8 +186,8 @@ func solveWorkflow(parts []part, workflows map[string][]rule) int {
 
 func solveRanges(workflows map[string][]rule) uint {
 
-	pq := aoc.PriorityQueue(func(a, b queue) bool { return false })
-	pq.Enqueue(queue{
+	pq := aoc.PriorityQueue(func(a, b *queue) bool { return false })
+	pq.Insert(&queue{
 		"in",
 		block{
 			ranger{1, 4000},
@@ -200,9 +200,9 @@ func solveRanges(workflows map[string][]rule) uint {
 	// var rejected []block
 
 	for !pq.IsEmpty() {
-		current, _ := pq.Dequeue()
+		current := pq.ExtractMin()
 		for _, rule := range workflows[current.name] {
-			next := queue{name: rule.queue, block: current.block}
+			next := &queue{name: rule.queue, block: current.block}
 
 			switch rule.match {
 			case "x":
@@ -223,14 +223,14 @@ func solveRanges(workflows map[string][]rule) uint {
 				accepted = append(accepted, next.block)
 
 			default:
-				pq.Enqueue(next)
+				pq.Insert(next)
 			}
 		}
 	}
 
 	var sum uint
 	for _, a := range accepted {
-		sum += uint((a.x[1]-a.x[0]+1) * (a.m[1]-a.m[0]+1) * (a.a[1]-a.a[0]+1) * (a.s[1]-a.s[0]+1))
+		sum += uint((a.x[1] - a.x[0] + 1) * (a.m[1] - a.m[0] + 1) * (a.a[1] - a.a[0] + 1) * (a.s[1] - a.s[0] + 1))
 	}
 
 	return sum
