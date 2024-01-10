@@ -336,6 +336,7 @@ func TestFibHeap(t *testing.T) {
 	is.Equal(v, &elem{5, 8})
 
 	m := aoc.FibHeap(less)
+	m.Insert(&elem{1, 99})
 	m.Insert(&elem{12, 9})
 	m.Insert(&elem{11, 10})
 	m.Insert(&elem{10, 11})
@@ -343,11 +344,34 @@ func TestFibHeap(t *testing.T) {
 
 	pq.Merge(m)
 
+	v = pq.Find(func(t *elem) bool {
+		return (*t)[0] == 6
+	})
+	is.Equal(v, &elem{6, 7})
+
+	v = pq.Find(func(t *elem) bool {
+		return (*t)[0] == 12
+	})
+	is.Equal(v, &elem{12, 9})
+
+	v = pq.ExtractMin()
+	is.True(v != nil)
+	is.Equal(v, &elem{1, 99})
+
+	pq.DecreaseKey(
+		func(t *elem) bool { return t[0] == 12 },
+		func(t *elem) { t[0] = 3 },
+	)
+
+	v = pq.ExtractMin()
+	is.True(v != nil)
+	is.Equal(v, &elem{3, 9})
+
 	var keys []int
 	for !pq.IsEmpty() {
 		v := pq.ExtractMin()
 		fmt.Println(v)
 		keys = append(keys, v[0])
 	}
-	is.Equal(keys, []int{6, 7, 8, 9, 10, 11, 12})
+	is.Equal(keys, []int{6, 7, 8, 9, 10, 11})
 }

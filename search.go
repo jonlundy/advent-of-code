@@ -166,11 +166,13 @@ func FindPath[C integer, N comparable](g pather[C, N], start, end N) (C, []N, ma
 }
 
 type fibTree[T any] struct {
-	value *T
+	value  *T
 	parent *fibTree[T]
-	child []*fibTree[T]
+	child  []*fibTree[T]
+	mark   bool
 }
 
+func (t *fibTree[T]) Value() *T { return t.value }
 func (t *fibTree[T]) addAtEnd(n *fibTree[T]) {
 	n.parent = t
 	t.child = append(t.child, n)
@@ -231,7 +233,7 @@ func (h *fibHeap[T]) ExtractMin() *T {
 }
 
 func (h *fibHeap[T]) consolidate() {
-	aux := make([]*fibTree[T], bits.Len(h.count))
+	aux := make([]*fibTree[T], bits.Len(h.count)+1)
 	for _, x := range h.trees {
 		order := len(x.child)
 
@@ -264,9 +266,83 @@ func (h *fibHeap[T]) consolidate() {
 func (h *fibHeap[T]) Merge(a *fibHeap[T]) {
 	h.trees = append(h.trees, a.trees...)
 	h.count += a.count
-	h.consolidate()
+	if h.least == nil || a.least != nil && h.less(a.least.value, h.least.value) {
+		h.least = a.least
+	}
 }
 
-// func (h *fibHeap[T]) Find(n *T) *fibTree[T] {
-	
-// }
+func (h *fibHeap[T]) find(fn func(*T) bool) *fibTree[T] {
+	var st []*fibTree[T]
+	st = append(st, h.trees...)
+	var tr *fibTree[T]
+
+	for len(st) > 0 {
+		tr, st = st[0], st[1:]
+		ro := *tr.value
+		if fn(&ro) {
+			break
+		}
+		st = append(st, tr.child...)
+	}
+
+	return tr
+}
+
+func (h *fibHeap[T]) Find(fn func(*T) bool) *T {
+	if needle := h.find(fn); needle != nil {
+		return needle.value
+	}
+
+	return nil
+}
+
+func (h *fibHeap[T]) DecreaseKey(find func(*T) bool, decrease func(*T)) {
+	needle := h.find(find)
+	if needle == nil {
+		return
+	}
+	decrease(needle.value)
+
+	if h.less(needle.value, h.least.value) {
+		h.least = needle
+	}
+
+	if parent := needle.parent; parent != nil {
+		if h.less(needle.value, parent.value) {
+			h.cut(needle)
+			h.cascadingCut(parent)
+		}
+	}
+}
+
+func (h *fibHeap[T]) cut(x *fibTree[T]) {
+	parent := x.parent
+	for i := range parent.child {
+		pos := parent.child[i]
+		if pos == x {
+			parent.child[i] = parent.child[len(parent.child)-1]
+			parent.child = parent.child[:len(parent.child)-1]
+			break
+		}
+	}
+
+	x.parent = nil
+	x.mark = false
+	h.trees = append(h.trees, x)
+
+	if h.less(x.value, h.least.value) {
+		h.least = x
+	}
+}
+
+func (h *fibHeap[T]) cascadingCut(y *fibTree[T]) {
+	if y.parent != nil {
+		if !y.mark {
+			y.mark = true
+			return
+		}
+
+		h.cut(y)
+		h.cascadingCut(y.parent)
+	}
+}
