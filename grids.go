@@ -3,6 +3,8 @@ package aoc
 import (
 	"cmp"
 	"sort"
+
+	"golang.org/x/exp/maps"
 )
 
 type Vector struct {
@@ -82,6 +84,76 @@ func (m *Map[I, T]) Valid(p Point[I]) bool {
 	return p[0] >= 0 && p[0] < rows && p[1] >= 0 && p[1] < cols
 }
 
+type cmap[C number, N comparable] struct {
+	base      pather[C, N]
+	neighbors map[N]map[N]C
+}
+
+func (m *cmap[C, N]) Cost(a, b N) C {
+	if v, ok := m.neighbors[a]; ok {
+		return v[b]
+	}
+	return 0
+}
+func (m *cmap[C, N]) Neighbors(n N) []N {
+	if v, ok := m.neighbors[n]; ok {
+		return maps.Keys(v)
+	}
+	return nil
+}
+func (m *cmap[C, N]) Target(n N, c C) bool {
+	return m.base.Target(n, c)
+}
+func (m *cmap[C, N]) String() string {
+	var b = &strings.Builder{}
+
+	for k, nbs := range m.neighbors {
+		fmt.Fprintln(b, k)
+		for to, v := range nbs {
+			fmt.Fprintln(b, "  ", to, k)
+		}
+	}
+
+	return b.String()
+}
+
+func CompressMap[C number, N comparable](p pather[C, N], start N) pather[C, N] {
+	var next = []N{start}
+	var visited = make(map[N]map[N]C)
+
+	var n N
+	for len(next) > 0 {
+		n, next = next[len(next)-1], next[:len(next)-1]
+
+		if _, ok := visited[n]; ok {
+			continue
+		}
+
+		nbs := p.Neighbors(n)
+		if len(nbs) == 2 {
+			a, b := nbs[0], nbs[1]
+			if to, ok := visited[a]; ok {
+				to[b] = to[n] + p.Cost(n, b)
+				delete(to, n)
+				visited[a] = to
+			} else  if to, ok := visited[b]; ok {
+				to[a] = to[n] + p.Cost(n, a)
+				delete(to, n)
+				visited[b] = to
+			}
+			continue
+		}
+
+		visited[n] = make(map[N]C)
+		next = append(next, nbs...)
+		for _, to := range nbs {
+			visited[n][to] = p.Cost(n, to)
+		}
+	}
+
+	return &cmap[C, N]{base: p, neighbors: visited}
+}
+
 type adjacencyList[V any, C comparable] map[C][]V
 type graph[V any, W cmp.Ordered, C comparable] map[C]*vertex[V, W]
 type graphOption[V any, W cmp.Ordered, C comparable] func(g *graph[V, W, C])
@@ -117,7 +189,7 @@ func Graph[V any, W cmp.Ordered, C comparable](opts ...graphOption[V, W, C]) *gr
 	return &g
 }
 func (g *graph[V, W, C]) AddVertex(id C, value V) {
-	(*g)[id] = &vertex[V,W]{Value: value}
+	(*g)[id] = &vertex[V, W]{Value: value}
 }
 func (g *graph[V, W, C]) AddEdge(from, to C, w W) {
 	if g == nil {
@@ -130,7 +202,7 @@ func (g *graph[V, W, C]) AddEdge(from, to C, w W) {
 		return
 	}
 
-	(*g)[from].Edges = append((*g)[from].Edges, edge[V,W]{(*g)[to], w})
+	(*g)[from].Edges = append((*g)[from].Edges, edge[V, W]{(*g)[to], w})
 }
 func (g *graph[V, W, C]) Neighbors(v C) []V {
 	if g == nil {
@@ -170,5 +242,3 @@ func WithAdjacencyList[W cmp.Ordered, C comparable](list adjacencyList[C, C]) gr
 		}
 	}
 }
-
-// func GraphFromMap()

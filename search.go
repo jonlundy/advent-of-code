@@ -42,30 +42,6 @@ func (pq *priorityQueue[T]) ExtractMin() *T {
 	return elem
 }
 
-type stack[T any] []T
-
-func Stack[T any](a ...T) *stack[T] {
-	var s stack[T] = a
-	return &s
-}
-func (s *stack[T]) Push(a ...T) {
-	if s == nil {
-		return
-	}
-	*s = append(*s, a...)
-}
-func (s *stack[T]) IsEmpty() bool {
-	return s == nil || len(*s) == 0
-}
-func (s *stack[T]) Pop() T {
-	var a T
-	if s.IsEmpty() {
-		return a
-	}
-	a, *s = (*s)[len(*s)-1], (*s)[:len(*s)-1]
-	return a
-}
-
 // ManhattanDistance the distance between two points measured along axes at right angles.
 func ManhattanDistance[T integer](a, b Point[T]) T {
 	return ABS(a[0]-b[0]) + ABS(a[1]-b[1])

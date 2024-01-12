@@ -9,66 +9,6 @@ import (
 	aoc "go.sour.is/advent-of-code"
 )
 
-func TestReverse(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.Reverse([]int{1, 2, 3, 4}), []int{4, 3, 2, 1})
-}
-
-func TestLCM(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.LCM([]int{}...), 0)
-	is.Equal(aoc.LCM(5), 5)
-	is.Equal(aoc.LCM(5, 3), 15)
-	is.Equal(aoc.LCM(5, 3, 2), 30)
-}
-
-func TestReadStringToInts(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.ReadStringToInts([]string{"1", "2", "3"}), []int{1, 2, 3})
-}
-
-func TestRepeat(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.Repeat(5, 3), []int{5, 5, 5})
-}
-
-func TestPower2(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.Power2(0), 1)
-	is.Equal(aoc.Power2(1), 2)
-	is.Equal(aoc.Power2(2), 4)
-}
-
-func TestABS(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(aoc.ABS(1), 1)
-	is.Equal(aoc.ABS(0), 0)
-	is.Equal(aoc.ABS(-1), 1)
-}
-
-func TestTranspose(t *testing.T) {
-	is := is.New(t)
-
-	is.Equal(
-		aoc.Transpose(
-			[][]int{
-				{1, 1},
-				{0, 0},
-				{1, 1},
-			},
-		),
-		[][]int{
-			{1, 0, 1},
-			{1, 0, 1},
-		},
-	)
-}
 
 func TestList(t *testing.T) {
 	is := is.New(t)
@@ -116,23 +56,6 @@ func TestPriorityQueue(t *testing.T) {
 	is.True(v == nil)
 }
 
-func TestSet(t *testing.T) {
-	is := is.New(t)
-
-	s := aoc.Set(1, 2, 3)
-	is.True(!s.Has(0))
-	is.True(s.Has(1))
-	is.True(s.Has(2))
-	is.True(s.Has(3))
-	is.True(!s.Has(4))
-
-	s.Add(4)
-	is.True(s.Has(4))
-
-	items := s.Items()
-	sort.Ints(items)
-	is.Equal(items, []int{1, 2, 3, 4})
-}
 
 func ExamplePriorityQueue() {
 	type memo struct {
@@ -194,26 +117,6 @@ func ExamplePriorityQueue() {
 	// point 5 is 22 steps away.
 	// point 6 is 19 steps away.
 }
-
-func TestStack(t *testing.T) {
-	is := is.New(t)
-
-	s := aoc.Stack(1, 2, 3, 4)
-	is.True(!s.IsEmpty())
-	is.Equal(s.Pop(), 4)
-	is.Equal(s.Pop(), 3)
-	is.Equal(s.Pop(), 2)
-	is.Equal(s.Pop(), 1)
-	is.True(s.IsEmpty())
-	s.Push(4, 3, 2, 1)
-	is.True(!s.IsEmpty())
-	is.Equal(s.Pop(), 1)
-	is.Equal(s.Pop(), 2)
-	is.Equal(s.Pop(), 3)
-	is.Equal(s.Pop(), 4)
-	is.True(s.IsEmpty())
-}
-
 func TestGraph(t *testing.T) {
 	is := is.New(t)
 
