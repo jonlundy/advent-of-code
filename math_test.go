@@ -1,5 +1,11 @@
 package aoc_test
 
+import (
+	"testing"
+
+	"github.com/matryer/is"
+	aoc "go.sour.is/advent-of-code"
+)
 
 func TestLCM(t *testing.T) {
 	is := is.New(t)

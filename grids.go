@@ -2,7 +2,9 @@ package aoc
 
 import (
 	"cmp"
+	"fmt"
 	"sort"
+	"strings"
 
 	"golang.org/x/exp/maps"
 )
@@ -109,8 +111,8 @@ func (m *cmap[C, N]) String() string {
 
 	for k, nbs := range m.neighbors {
 		fmt.Fprintln(b, k)
-		for to, v := range nbs {
-			fmt.Fprintln(b, "  ", to, k)
+		for to, c := range nbs {
+			fmt.Fprintln(b, "  ", to, c)
 		}
 	}
 
@@ -136,7 +138,7 @@ func CompressMap[C number, N comparable](p pather[C, N], start N) pather[C, N] {
 				to[b] = to[n] + p.Cost(n, b)
 				delete(to, n)
 				visited[a] = to
-			} else  if to, ok := visited[b]; ok {
+			} else if to, ok := visited[b]; ok {
 				to[a] = to[n] + p.Cost(n, a)
 				delete(to, n)
 				visited[b] = to

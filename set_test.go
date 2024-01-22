@@ -1,5 +1,12 @@
 package aoc_test
 
+import (
+	"sort"
+	"testing"
+
+	"github.com/matryer/is"
+	aoc "go.sour.is/advent-of-code"
+)
 
 func TestSet(t *testing.T) {
 	is := is.New(t)

@@ -1,8 +1,6 @@
 package aoc_test
 
 import (
-	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/matryer/is"
@@ -26,7 +24,6 @@ func TestRepeat(t *testing.T) {
 
 	is.Equal(aoc.Repeat(5, 3), []int{5, 5, 5})
 }
-
 
 func TestTranspose(t *testing.T) {
 	is := is.New(t)
